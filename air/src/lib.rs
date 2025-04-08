@@ -301,8 +301,11 @@ where
         is_last_row: SymbolicVarF::is_last_row(),
         is_transition: SymbolicVarF::is_transition(),
     };
-    let llzk = LLZK_CODEGEN.lock().unwrap();
-    llzk.initialize_struct(&chip.name());
+    {
+        let llzk = LLZK_CODEGEN.lock().unwrap();
+        llzk.initialize_struct(&chip.name());
+        drop(llzk);
+    }
     chip.eval(&mut folder);
     // Commented out for reference when adding the inputs and outputs of the circuit
     //for i in 0..8 {
@@ -311,8 +314,7 @@ where
     //for i in 8..15 {
     //    pe.add_output(&main.local[i]);
     //}
-    let llzk = LLZK_CODEGEN.lock().unwrap();
-    let llzk_output = llzk.extract_output();
+    let llzk_output = LLZK_CODEGEN.lock().unwrap().extract_output();
     llzk_reset();
 
     llzk_output
@@ -328,6 +330,7 @@ pub fn llzk_reset() {
 #[cfg(test)]
 mod tests {
 
+    use crate::codegen_llzk_eval;
     use crate::symbolic_var_f::SymbolicVarF;
     use p3_air::{Air, BaseAir};
     use p3_field::{AbstractField, PrimeField32};
@@ -423,6 +426,30 @@ mod tests {
         for cons in &res {
             println!("{}", cons);
         }
+
+        // for chip in chips {
+        //     if chip.name() == "AddSub" {
+        //         let (code, f_ctr, _, f_constants, ef_constants, picusextractor) = codegen_cuda_eval(chip);
+        //         println!("{:#?}", code);
+        //         println!("{}", f_ctr);
+        //         println!("{:?}", f_constants);
+        //         println!("{:?}", ef_constants);
+        //         return;
+        //     }
+        // }
+        // panic!("no AddSub chip found");
+    }
+
+    #[test]
+    pub fn test_add_llzk() {
+        setup_logger();
+
+        let config = BabyBearPoseidon2::default();
+        let machine = RiscvAir::machine(config);
+        let chips = machine.chips();
+        let mut chip = AddChip;
+        let mut chip = Chip::new(chip);
+        let () = codegen_llzk_eval(&chip);
 
         // for chip in chips {
         //     if chip.name() == "AddSub" {
