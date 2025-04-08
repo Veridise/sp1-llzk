@@ -1,12 +1,13 @@
 #![allow(clippy::assign_op_pattern)]
 
 pub mod instruction;
+pub mod llzk;
 pub mod optimizer;
+pub mod picusextractor;
 pub mod symbolic_expr_ef;
 pub mod symbolic_expr_f;
 pub mod symbolic_var_ef;
 pub mod symbolic_var_f;
-pub mod picusextractor;
 
 use std::sync::Mutex;
 
@@ -19,7 +20,10 @@ use p3_air::{
 };
 use p3_baby_bear::BabyBear;
 use p3_field::extension::BinomialExtensionField;
+use p3_matrix::Matrix;
 use p3_matrix::{dense::RowMajorMatrixView, stack::VerticalPair};
+use picusextractor::PicusExtractor;
+use sp1_derive::AlignedBorrow;
 use sp1_stark::septic_curve::SepticCurve;
 use sp1_stark::septic_extension::SepticExtension;
 use sp1_stark::{
@@ -28,18 +32,16 @@ use sp1_stark::{
     Chip,
 };
 use sp1_stark::{AirOpenedValues, PROOF_MAX_NUM_PVS};
+use std::borrow::Borrow;
 use symbolic_expr_ef::SymbolicExprEF;
 use symbolic_expr_f::SymbolicExprF;
 use symbolic_var_ef::SymbolicVarEF;
 use symbolic_var_f::SymbolicVarF;
-use picusextractor::PicusExtractor;
-use p3_matrix::Matrix;
-use std::borrow::Borrow;
-use sp1_derive::AlignedBorrow;
 
-
-use sp1_core_machine::{operations::AddOperation};
+use sp1_core_machine::operations::AddOperation;
 use sp1_stark::{air::SP1AirBuilder, Word};
+
+use p3_field::AbstractField;
 
 pub type F = BabyBear;
 
@@ -53,6 +55,7 @@ lazy_static! {
     pub static ref CUDA_P3_EVAL_EXPR_F_CTR: Mutex<u32> = Mutex::new(0);
     pub static ref CUDA_P3_EVAL_EXPR_EF_CTR: Mutex<u32> = Mutex::new(0);
     pub static ref PICUS_EXTRACTOR: Mutex<PicusExtractor> = Mutex::new(PicusExtractor::new());
+    pub static ref LLZK_CODEGEN: Mutex<llzk::Codegen> = Mutex::new(llzk::Codegen::new());
 }
 
 pub struct SymbolicProverFolder<'a> {
@@ -100,7 +103,7 @@ impl<'a> AirBuilder for SymbolicProverFolder<'a> {
 
     fn assert_zero<I: Into<Self::Expr>>(&mut self, x: I) {
         let x: Self::Expr = x.into();
-        let mut code = CUDA_P3_EVAL_CODE.lock().unwrap();        
+        let mut code = CUDA_P3_EVAL_CODE.lock().unwrap();
         code.push(Instruction32::f_assert_zero(x));
         drop(code);
         let mut picusextractor = PICUS_EXTRACTOR.lock().unwrap();
@@ -108,6 +111,10 @@ impl<'a> AirBuilder for SymbolicProverFolder<'a> {
         if let Some(picus_expr) = maybe_expr {
             picusextractor.eqs.push(picus_expr.clone());
         }
+        // LLZK_CODEGEN
+        let llzk = LLZK_CODEGEN.lock().unwrap();
+        let zero = llzk.const_f(F::zero());
+        llzk.emit_eq(llzk.get_f(x), zero);
     }
 }
 
@@ -124,6 +131,10 @@ impl<'a> ExtensionBuilder for SymbolicProverFolder<'a> {
         let mut code = CUDA_P3_EVAL_CODE.lock().unwrap();
         code.push(Instruction32::e_assert_zero(x));
         drop(code);
+        // LLZK_CODEGEN
+        let llzk = LLZK_CODEGEN.lock().unwrap();
+        let zero = llzk.const_ef(EF::zero());
+        llzk.emit_eq(llzk.get_ef(x), zero);
     }
 }
 
@@ -177,7 +188,9 @@ struct AddCols<T> {
 impl<'a> EmptyMessageBuilder for SymbolicProverFolder<'a> {}
 
 /// Generates code in CUDA for evaluating the constraint polynomial on the device.
-pub fn codegen_cuda_eval<A>(chip: &Chip<F, A>) -> (Vec<Instruction16>, u32, u32, Vec<F>, Vec<EF>, PicusExtractor)
+pub fn codegen_cuda_eval<A>(
+    chip: &Chip<F, A>,
+) -> (Vec<Instruction16>, u32, u32, Vec<F>, Vec<EF>, PicusExtractor)
 where
     A: for<'a> Air<SymbolicProverFolder<'a>> + MachineAir<F>,
 {
@@ -219,7 +232,7 @@ where
         is_last_row: SymbolicVarF::is_last_row(),
         is_transition: SymbolicVarF::is_transition(),
     };
-    
+
     chip.eval(&mut folder);
     let code = CUDA_P3_EVAL_CODE.lock().unwrap().to_vec();
     let mut pe = PICUS_EXTRACTOR.lock().unwrap();
@@ -246,23 +259,90 @@ pub fn CUDA_P3_EVAL_RESET() {
     *CUDA_P3_EVAL_EXPR_EF_CTR.lock().unwrap() = 0;
 }
 
+pub fn codegen_llzk_eval<A>(chip: &Chip<F, A>) -> llzk::CodegenOutput
+where
+    A: for<'a> Air<SymbolicProverFolder<'a>> + MachineAir<F>,
+{
+    let preprocessed_width = chip.preprocessed_width() as u32;
+    let width = chip.width() as u32;
+    let permutation_width = chip.permutation_width() as u32;
+    let preprocessed = AirOpenedValues {
+        local: (0..preprocessed_width).map(SymbolicVarF::preprocessed_local).collect(),
+        next: (0..preprocessed_width).map(SymbolicVarF::preprocessed_next).collect(),
+    };
+    let main = AirOpenedValues {
+        local: (0..width).map(SymbolicVarF::main_local).collect(),
+        next: (0..width).map(SymbolicVarF::main_next).collect(),
+    };
+    let perm = AirOpenedValues {
+        local: (0..permutation_width).map(SymbolicVarEF::permutation_local).collect(),
+        next: (0..permutation_width).map(SymbolicVarEF::permutation_next).collect(),
+    };
+    let public_values =
+        (0..PROOF_MAX_NUM_PVS as u32).map(SymbolicVarF::public_value).collect::<Vec<_>>();
+    let perm_challenges = (0..2).map(SymbolicVarEF::permutation_challenge).collect::<Vec<_>>();
+
+    let mut folder = SymbolicProverFolder {
+        preprocessed: preprocessed.view(),
+        main: main.view(),
+        perm: perm.view(),
+        perm_challenges: &perm_challenges,
+        local_cumulative_sum: &SymbolicVarEF::cumulative_sum(0),
+        global_cumulative_sum: &SepticDigest(SepticCurve {
+            x: SepticExtension(core::array::from_fn(|i| {
+                SymbolicVarF::global_cumulative_sum(i as u32)
+            })),
+            y: SepticExtension(core::array::from_fn(|i| {
+                SymbolicVarF::global_cumulative_sum((i + 7) as u32)
+            })),
+        }),
+        public_values: &public_values,
+        is_first_row: SymbolicVarF::is_first_row(),
+        is_last_row: SymbolicVarF::is_last_row(),
+        is_transition: SymbolicVarF::is_transition(),
+    };
+    let llzk = LLZK_CODEGEN.lock().unwrap();
+    llzk.initialize_struct(&chip.name());
+    chip.eval(&mut folder);
+    // Commented out for reference when adding the inputs and outputs of the circuit
+    //for i in 0..8 {
+    //    pe.add_input(&main.local[i]);
+    //}
+    //for i in 8..15 {
+    //    pe.add_output(&main.local[i]);
+    //}
+    let llzk = LLZK_CODEGEN.lock().unwrap();
+    let llzk_output = llzk.extract_output();
+    llzk_reset();
+
+    llzk_output
+}
+
+pub fn llzk_reset() {
+    *LLZK_CODEGEN.lock().unwrap() = llzk::Codegen::new();
+    *CUDA_P3_EVAL_EF_CONSTANTS.lock().unwrap() = Vec::new();
+    *CUDA_P3_EVAL_EXPR_F_CTR.lock().unwrap() = 0;
+    *CUDA_P3_EVAL_EXPR_EF_CTR.lock().unwrap() = 0;
+}
+
 #[cfg(test)]
 mod tests {
 
+    use crate::symbolic_var_f::SymbolicVarF;
     use p3_air::{Air, BaseAir};
     use p3_field::{AbstractField, PrimeField32};
     use p3_matrix::dense::RowMajorMatrix;
     use p3_matrix::Matrix;
     use sp1_core_executor::ExecutionRecord;
     use sp1_core_executor::Program;
-    use sp1_core_machine::{operations::AddOperation, operations::AndOperation, riscv::RiscvAir, utils::setup_logger};
+    use sp1_core_machine::{
+        operations::AddOperation, operations::AndOperation, riscv::RiscvAir, utils::setup_logger,
+    };
     use sp1_derive::AlignedBorrow;
     use sp1_stark::Chip;
     use sp1_stark::{air::MachineAir, baby_bear_poseidon2::BabyBearPoseidon2};
     use sp1_stark::{air::SP1AirBuilder, Word};
     use std::borrow::Borrow;
-    use crate::symbolic_var_f::SymbolicVarF;
-
 
     use crate::codegen_cuda_eval;
     use crate::picusextractor;

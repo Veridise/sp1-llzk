@@ -2,6 +2,7 @@ use std::fmt::Debug;
 use std::ops::{Add, Mul, Sub};
 
 use crate::{instruction::Instruction32, symbolic_expr_ef::SymbolicExprEF, CUDA_P3_EVAL_CODE, EF};
+use crate::{llzk, LLZK_CODEGEN};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SymbolicVarEF {
@@ -66,6 +67,10 @@ impl From<SymbolicVarEF> for SymbolicExprEF {
         let mut code = CUDA_P3_EVAL_CODE.lock().unwrap();
         code.push(Instruction32::e_assign_v(output, value));
         drop(code);
+        // LLZK_CODEGEN
+        let llzk = LLZK_CODEGEN.lock().unwrap();
+        let value = llzk.load_var_ef(value);
+        llzk.assign_ef(output, value);
         output
     }
 }
@@ -79,6 +84,11 @@ impl Add<EF> for SymbolicVarEF {
         let mut code = CUDA_P3_EVAL_CODE.lock().unwrap();
         code.push(Instruction32::e_add_vc(output, self, rhs));
         drop(code);
+        // LLZK_CODEGEN
+        let llzk = LLZK_CODEGEN.lock().unwrap();
+        let lhs = llzk.load_var_ef(self);
+        let rhs = llzk.const_ef(rhs);
+        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Add, lhs, rhs));
         output
     }
 }
@@ -92,6 +102,11 @@ impl Add<SymbolicVarEF> for SymbolicVarEF {
         let mut code = CUDA_P3_EVAL_CODE.lock().unwrap();
         code.push(Instruction32::e_add_vv(output, self, rhs));
         drop(code);
+        // LLZK_CODEGEN
+        let llzk = LLZK_CODEGEN.lock().unwrap();
+        let lhs = llzk.load_var_ef(self);
+        let rhs = llzk.load_var_ef(rhs);
+        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Add, lhs, rhs));
         output
     }
 }
@@ -105,6 +120,11 @@ impl Add<SymbolicExprEF> for SymbolicVarEF {
         let mut code = CUDA_P3_EVAL_CODE.lock().unwrap();
         code.push(Instruction32::e_add_ve(output, self, rhs));
         drop(code);
+        // LLZK_CODEGEN
+        let llzk = LLZK_CODEGEN.lock().unwrap();
+        let lhs = llzk.load_var_ef(self);
+        let rhs = llzk.get_ef(rhs);
+        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Add, lhs, rhs));
         output
     }
 }
@@ -118,6 +138,11 @@ impl Sub<EF> for SymbolicVarEF {
         let mut code = CUDA_P3_EVAL_CODE.lock().unwrap();
         code.push(Instruction32::e_sub_vc(output, self, rhs));
         drop(code);
+        // LLZK_CODEGEN
+        let llzk = LLZK_CODEGEN.lock().unwrap();
+        let lhs = llzk.load_var_ef(self);
+        let rhs = llzk.const_ef(rhs);
+        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
         output
     }
 }
@@ -131,6 +156,11 @@ impl Sub<SymbolicVarEF> for SymbolicVarEF {
         let mut code = CUDA_P3_EVAL_CODE.lock().unwrap();
         code.push(Instruction32::e_sub_vv(output, self, rhs));
         drop(code);
+        // LLZK_CODEGEN
+        let llzk = LLZK_CODEGEN.lock().unwrap();
+        let lhs = llzk.load_var_ef(self);
+        let rhs = llzk.load_var_ef(rhs);
+        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
         output
     }
 }
@@ -144,6 +174,11 @@ impl Sub<SymbolicExprEF> for SymbolicVarEF {
         let mut code = CUDA_P3_EVAL_CODE.lock().unwrap();
         code.push(Instruction32::e_sub_ve(output, self, rhs));
         drop(code);
+        // LLZK_CODEGEN
+        let llzk = LLZK_CODEGEN.lock().unwrap();
+        let lhs = llzk.load_var_ef(self);
+        let rhs = llzk.get_ef(rhs);
+        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
         output
     }
 }
@@ -157,6 +192,11 @@ impl Mul<EF> for SymbolicVarEF {
         let mut code = CUDA_P3_EVAL_CODE.lock().unwrap();
         code.push(Instruction32::e_mul_vc(output, self, rhs));
         drop(code);
+        // LLZK_CODEGEN
+        let llzk = LLZK_CODEGEN.lock().unwrap();
+        let lhs = llzk.load_var_ef(self);
+        let rhs = llzk.const_ef(rhs);
+        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
         output
     }
 }
@@ -170,6 +210,11 @@ impl Mul<SymbolicVarEF> for SymbolicVarEF {
         let mut code = CUDA_P3_EVAL_CODE.lock().unwrap();
         code.push(Instruction32::e_mul_vv(output, self, rhs));
         drop(code);
+        // LLZK_CODEGEN
+        let llzk = LLZK_CODEGEN.lock().unwrap();
+        let lhs = llzk.load_var_ef(self);
+        let rhs = llzk.load_var_ef(rhs);
+        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
         output
     }
 }
@@ -183,6 +228,11 @@ impl Mul<SymbolicExprEF> for SymbolicVarEF {
         let mut code = CUDA_P3_EVAL_CODE.lock().unwrap();
         code.push(Instruction32::e_mul_ve(output, self, rhs));
         drop(code);
+        // LLZK_CODEGEN
+        let llzk = LLZK_CODEGEN.lock().unwrap();
+        let lhs = llzk.load_var_ef(self);
+        let rhs = llzk.get_ef(rhs);
+        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
         output
     }
 }
