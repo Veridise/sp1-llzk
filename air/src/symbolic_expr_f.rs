@@ -8,7 +8,7 @@ use crate::{
     llzk,
     picusextractor::{self, PicusExtractor},
     symbolic_var_f::SymbolicVarF,
-    CUDA_P3_EVAL_CODE, CUDA_P3_EVAL_EXPR_F_CTR, F, LLZK_CODEGEN, PICUS_EXTRACTOR,
+    CUDA_P3_EVAL_CODE, CUDA_P3_EVAL_EXPR_F_CTR, F, PICUS_EXTRACTOR,
 };
 
 use p3_field::{AbstractField, PrimeField32};
@@ -44,6 +44,7 @@ impl SymbolicExprF {
 impl Default for SymbolicExprF {
     // #[instrument(skip_all, level = "trace", name = "Default for SymbolicExprF")]
     fn default() -> Self {
+        unreachable!();
         let output = SymbolicExprF::alloc();
         let mut code = CUDA_P3_EVAL_CODE.lock().unwrap();
         code.push(Instruction32::f_assign_c(output, F::zero()));
@@ -52,8 +53,8 @@ impl Default for SymbolicExprF {
         pe.expr_map.insert(output, picusextractor::PicusExpr::Const(0));
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_f(output, llzk.const_f(F::zero()));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_f(output, llzk.const_f(F::zero()));
         output
     }
 }
@@ -72,8 +73,8 @@ impl From<F> for SymbolicExprF {
         );
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_f(output, llzk.const_f(f));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_f(output, llzk.const_f(f));
         output
     }
 }
@@ -99,10 +100,10 @@ impl Add<F> for SymbolicExprF {
         }
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let rhs = llzk.const_f(rhs);
-        let lhs = llzk.get_f(self);
-        llzk.assign_f(output, llzk.binop(llzk::BinOps::Add, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let rhs = llzk.const_f(rhs);
+        //let lhs = llzk.get_f(self);
+        //llzk.assign_f(output, llzk.binop(llzk::BinOps::Add, lhs, rhs));
         output
     }
 }
@@ -134,10 +135,10 @@ impl Add<SymbolicVarF> for SymbolicExprF {
         }
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let rhs = llzk.load_var(rhs);
-        let lhs = llzk.get_f(self);
-        llzk.assign_f(output, llzk.binop(llzk::BinOps::Add, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let rhs = llzk.load_var(rhs);
+        //let lhs = llzk.get_f(self);
+        //llzk.assign_f(output, llzk.binop(llzk::BinOps::Add, lhs, rhs));
         output
     }
 }
@@ -155,10 +156,10 @@ impl Add<SymbolicExprF> for SymbolicExprF {
         pe.process_binop(&output, &self, &rhs, picusextractor::PicusBinop::Add);
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let rhs = llzk.get_f(rhs);
-        let lhs = llzk.get_f(self);
-        llzk.assign_f(output, llzk.binop(llzk::BinOps::Add, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let rhs = llzk.get_f(rhs);
+        //let lhs = llzk.get_f(self);
+        //llzk.assign_f(output, llzk.binop(llzk::BinOps::Add, lhs, rhs));
         output
     }
 }
@@ -183,10 +184,10 @@ impl Sub<F> for SymbolicExprF {
         pe.process_binop_const(&output, &self, &rhs, picusextractor::PicusBinop::Sub);
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let rhs = llzk.const_f(rhs);
-        let lhs = llzk.get_f(self);
-        llzk.assign_f(output, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let rhs = llzk.const_f(rhs);
+        //let lhs = llzk.get_f(self);
+        //llzk.assign_f(output, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
         output
     }
 }
@@ -204,10 +205,10 @@ impl Sub<SymbolicVarF> for SymbolicExprF {
         pe.process_binop_var(&output, &self, &rhs, picusextractor::PicusBinop::Sub);
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let rhs = llzk.load_var(rhs);
-        let lhs = llzk.get_f(self);
-        llzk.assign_f(output, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let rhs = llzk.load_var(rhs);
+        //let lhs = llzk.get_f(self);
+        //llzk.assign_f(output, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
         output
     }
 }
@@ -225,10 +226,10 @@ impl Sub<SymbolicExprF> for SymbolicExprF {
         pe.process_binop(&output, &self, &rhs, picusextractor::PicusBinop::Sub);
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let rhs = llzk.get_f(rhs);
-        let lhs = llzk.get_f(self);
-        llzk.assign_f(output, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let rhs = llzk.get_f(rhs);
+        //let lhs = llzk.get_f(self);
+        //llzk.assign_f(output, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
         output
     }
 }
@@ -253,10 +254,10 @@ impl Mul<F> for SymbolicExprF {
         pe.process_binop_const(&output, &self, &rhs, picusextractor::PicusBinop::Mul);
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let rhs = llzk.const_f(rhs);
-        let lhs = llzk.get_f(self);
-        llzk.assign_f(output, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let rhs = llzk.const_f(rhs);
+        //let lhs = llzk.get_f(self);
+        //llzk.assign_f(output, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
         output
     }
 }
@@ -274,10 +275,10 @@ impl Mul<SymbolicVarF> for SymbolicExprF {
         pe.process_binop_var(&output, &self, &rhs, picusextractor::PicusBinop::Mul);
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let rhs = llzk.load_var(rhs);
-        let lhs = llzk.get_f(self);
-        llzk.assign_f(output, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let rhs = llzk.load_var(rhs);
+        //let lhs = llzk.get_f(self);
+        //llzk.assign_f(output, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
         output
     }
 }
@@ -295,10 +296,10 @@ impl Mul<SymbolicExprF> for SymbolicExprF {
         pe.process_binop(&output, &self, &rhs, picusextractor::PicusBinop::Mul);
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let rhs = llzk.get_f(rhs);
-        let lhs = llzk.get_f(self);
-        llzk.assign_f(output, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let rhs = llzk.get_f(rhs);
+        //let lhs = llzk.get_f(self);
+        //llzk.assign_f(output, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
         output
     }
 }
@@ -323,9 +324,9 @@ impl Neg for SymbolicExprF {
         let self_expr = pe.expr_map.get(&self).cloned().unwrap();
         pe.expr_map.insert(output, picusextractor::PicusExpr::Neg(Box::new(self_expr.clone())));
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let value = llzk.get_f(self);
-        llzk.assign_f(output, llzk.unop(llzk::UnOps::Neg, value));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let value = llzk.get_f(self);
+        //llzk.assign_f(output, llzk.unop(llzk::UnOps::Neg, value));
         output
     }
 }
@@ -379,8 +380,8 @@ impl AbstractField for SymbolicExprF {
         pe.process_field(&output, &F::zero());
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_f(output, llzk.const_f(F::zero()));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_f(output, llzk.const_f(F::zero()));
         output
     }
 
@@ -394,8 +395,8 @@ impl AbstractField for SymbolicExprF {
         pe.process_field(&output, &F::one());
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_f(output, llzk.const_f(F::one()));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_f(output, llzk.const_f(F::one()));
         output
     }
 
@@ -409,8 +410,8 @@ impl AbstractField for SymbolicExprF {
         pe.process_field(&output, &F::two());
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_f(output, llzk.const_f(F::two()));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_f(output, llzk.const_f(F::two()));
         output
     }
 
@@ -424,8 +425,8 @@ impl AbstractField for SymbolicExprF {
         pe.process_field(&output, &F::neg_one());
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_f(output, llzk.const_f(F::neg_one()));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_f(output, llzk.const_f(F::neg_one()));
         output
     }
 
@@ -439,8 +440,8 @@ impl AbstractField for SymbolicExprF {
         pe.process_field(&output, &f);
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_f(output, llzk.const_f(f));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_f(output, llzk.const_f(f));
         output
     }
 
@@ -454,8 +455,8 @@ impl AbstractField for SymbolicExprF {
         pe.process_field(&output, &F::from_bool(b));
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_f(output, llzk.const_f(F::from_bool(b)));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_f(output, llzk.const_f(F::from_bool(b)));
         output
     }
 
@@ -469,8 +470,8 @@ impl AbstractField for SymbolicExprF {
         pe.add_range_constraint(&output, 256);
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_f(output, llzk.const_f(F::from_canonical_u8(n)));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_f(output, llzk.const_f(F::from_canonical_u8(n)));
         output
     }
 
@@ -484,8 +485,8 @@ impl AbstractField for SymbolicExprF {
         pe.add_range_constraint(&output, 2u64.pow(16));
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_f(output, llzk.const_f(F::from_canonical_u16(n)));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_f(output, llzk.const_f(F::from_canonical_u16(n)));
         output
     }
 
@@ -499,8 +500,8 @@ impl AbstractField for SymbolicExprF {
         pe.add_range_constraint(&output, 2u64.pow(32));
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_f(output, llzk.const_f(F::from_canonical_u32(n)));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_f(output, llzk.const_f(F::from_canonical_u32(n)));
         output
     }
 
@@ -514,8 +515,8 @@ impl AbstractField for SymbolicExprF {
         pe.process_field(&output, &F::from_canonical_u64(n));
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_f(output, llzk.const_f(F::from_canonical_u64(n)));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_f(output, llzk.const_f(F::from_canonical_u64(n)));
         output
     }
 
@@ -529,8 +530,8 @@ impl AbstractField for SymbolicExprF {
         pe.process_field(&output, &F::from_canonical_usize(n));
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_f(output, llzk.const_f(F::from_canonical_usize(n)));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_f(output, llzk.const_f(F::from_canonical_usize(n)));
         output
     }
 
@@ -544,8 +545,8 @@ impl AbstractField for SymbolicExprF {
         pe.process_field(&output, &F::from_wrapped_u32(n));
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_f(output, llzk.const_f(F::from_wrapped_u32(n)));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_f(output, llzk.const_f(F::from_wrapped_u32(n)));
         output
     }
 
@@ -559,8 +560,8 @@ impl AbstractField for SymbolicExprF {
         pe.process_field(&output, &F::from_wrapped_u64(n));
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_f(output, llzk.const_f(F::from_wrapped_u64(n)));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_f(output, llzk.const_f(F::from_wrapped_u64(n)));
         output
     }
 
@@ -574,8 +575,8 @@ impl AbstractField for SymbolicExprF {
         pe.process_field(&output, &F::generator());
         drop(pe);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_f(output, llzk.const_f(F::generator()));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_f(output, llzk.const_f(F::generator()));
         output
     }
 }

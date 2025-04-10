@@ -6,8 +6,8 @@ use std::{
 use p3_field::{AbstractExtensionField, AbstractField};
 
 use crate::{
-    instruction::Instruction32, llzk, symbolic_expr_f::SymbolicExprF,
-    symbolic_var_ef::SymbolicVarEF, CUDA_P3_EVAL_CODE, CUDA_P3_EVAL_EXPR_EF_CTR, EF, LLZK_CODEGEN,
+    instruction::Instruction32, symbolic_expr_f::SymbolicExprF, symbolic_var_ef::SymbolicVarEF,
+    CUDA_P3_EVAL_CODE, CUDA_P3_EVAL_EXPR_EF_CTR, EF,
 };
 
 #[derive(Debug, Copy, PartialEq, Eq, Hash)]
@@ -46,8 +46,8 @@ impl Default for SymbolicExprEF {
         code.push(Instruction32::e_assign_c(output, EF::zero()));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_ef(output, llzk.const_ef(EF::zero()));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_ef(output, llzk.const_ef(EF::zero()));
         output
     }
 }
@@ -60,8 +60,8 @@ impl From<EF> for SymbolicExprEF {
         code.push(Instruction32::e_assign_c(output, f));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_ef(output, llzk.const_ef(f));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_ef(output, llzk.const_ef(f));
         output
     }
 }
@@ -76,10 +76,10 @@ impl Add<EF> for SymbolicExprEF {
         code.push(Instruction32::e_add_ec(output, self, rhs));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let lhs = llzk.get_ef(self);
-        let rhs = llzk.const_ef(rhs);
-        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Add, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let lhs = llzk.get_ef(self);
+        //let rhs = llzk.const_ef(rhs);
+        //llzk.assign_ef(output, llzk.binop(llzk::BinOps::Add, lhs, rhs));
         output
     }
 }
@@ -94,10 +94,10 @@ impl Add<SymbolicVarEF> for SymbolicExprEF {
         code.push(Instruction32::e_add_ev(output, self, rhs));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let lhs = llzk.get_ef(self);
-        let rhs = llzk.load_var_ef(rhs);
-        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Add, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let lhs = llzk.get_ef(self);
+        //let rhs = llzk.load_var_ef(rhs);
+        //llzk.assign_ef(output, llzk.binop(llzk::BinOps::Add, lhs, rhs));
         output
     }
 }
@@ -112,10 +112,10 @@ impl Add<SymbolicExprEF> for SymbolicExprEF {
         code.push(Instruction32::e_add_ee(output, self, rhs));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let lhs = llzk.get_ef(self);
-        let rhs = llzk.get_ef(rhs);
-        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Add, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let lhs = llzk.get_ef(self);
+        //let rhs = llzk.get_ef(rhs);
+        //llzk.assign_ef(output, llzk.binop(llzk::BinOps::Add, lhs, rhs));
         output
     }
 }
@@ -127,10 +127,10 @@ impl AddAssign for SymbolicExprEF {
         code.push(Instruction32::e_add_assign_e(*self, rhs));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let lhs = llzk.get_ef(*self);
-        let rhs = llzk.get_ef(rhs);
-        llzk.assign_ef(*self, llzk.binop(llzk::BinOps::Add, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let lhs = llzk.get_ef(*self);
+        //let rhs = llzk.get_ef(rhs);
+        //llzk.assign_ef(*self, llzk.binop(llzk::BinOps::Add, lhs, rhs));
     }
 }
 
@@ -144,10 +144,10 @@ impl Sub<EF> for SymbolicExprEF {
         code.push(Instruction32::e_sub_ec(output, self, rhs));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let lhs = llzk.get_ef(self);
-        let rhs = llzk.const_ef(rhs);
-        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let lhs = llzk.get_ef(self);
+        //let rhs = llzk.const_ef(rhs);
+        //llzk.assign_ef(output, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
         output
     }
 }
@@ -162,10 +162,10 @@ impl Sub<SymbolicVarEF> for SymbolicExprEF {
         code.push(Instruction32::e_sub_ev(output, self, rhs));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let lhs = llzk.get_ef(self);
-        let rhs = llzk.load_var_ef(rhs);
-        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let lhs = llzk.get_ef(self);
+        //let rhs = llzk.load_var_ef(rhs);
+        //llzk.assign_ef(output, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
         output
     }
 }
@@ -180,10 +180,10 @@ impl Sub<SymbolicExprEF> for SymbolicExprEF {
         code.push(Instruction32::e_sub_ee(output, self, rhs));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let lhs = llzk.get_ef(self);
-        let rhs = llzk.get_ef(rhs);
-        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let lhs = llzk.get_ef(self);
+        //let rhs = llzk.get_ef(rhs);
+        //llzk.assign_ef(output, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
         output
     }
 }
@@ -195,10 +195,10 @@ impl SubAssign for SymbolicExprEF {
         code.push(Instruction32::e_sub_assign_e(*self, rhs));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let lhs = llzk.get_ef(*self);
-        let rhs = llzk.get_ef(rhs);
-        llzk.assign_ef(*self, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let lhs = llzk.get_ef(*self);
+        //let rhs = llzk.get_ef(rhs);
+        //llzk.assign_ef(*self, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
     }
 }
 
@@ -212,10 +212,10 @@ impl Mul<EF> for SymbolicExprEF {
         code.push(Instruction32::e_mul_ec(output, self, rhs));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let lhs = llzk.get_ef(self);
-        let rhs = llzk.const_ef(rhs);
-        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let lhs = llzk.get_ef(self);
+        //let rhs = llzk.const_ef(rhs);
+        //llzk.assign_ef(output, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
         output
     }
 }
@@ -230,10 +230,10 @@ impl Mul<SymbolicVarEF> for SymbolicExprEF {
         code.push(Instruction32::e_mul_ev(output, self, rhs));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let lhs = llzk.get_ef(self);
-        let rhs = llzk.load_var_ef(rhs);
-        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let lhs = llzk.get_ef(self);
+        //let rhs = llzk.load_var_ef(rhs);
+        //llzk.assign_ef(output, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
         output
     }
 }
@@ -248,10 +248,10 @@ impl Mul<SymbolicExprEF> for SymbolicExprEF {
         code.push(Instruction32::e_mul_ee(output, self, rhs));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let lhs = llzk.get_ef(self);
-        let rhs = llzk.get_ef(rhs);
-        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let lhs = llzk.get_ef(self);
+        //let rhs = llzk.get_ef(rhs);
+        //llzk.assign_ef(output, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
         output
     }
 }
@@ -263,10 +263,10 @@ impl MulAssign for SymbolicExprEF {
         code.push(Instruction32::e_mul_assign_e(*self, rhs));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let lhs = llzk.get_ef(*self);
-        let rhs = llzk.get_ef(rhs);
-        llzk.assign_ef(*self, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let lhs = llzk.get_ef(*self);
+        //let rhs = llzk.get_ef(rhs);
+        //llzk.assign_ef(*self, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
     }
 }
 
@@ -280,9 +280,9 @@ impl Neg for SymbolicExprEF {
         code.push(Instruction32::e_neg_e(output, self));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let value = llzk.get_ef(self);
-        llzk.assign_ef(output, llzk.unop(llzk::UnOps::Neg, value));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let value = llzk.get_ef(self);
+        //llzk.assign_ef(output, llzk.unop(llzk::UnOps::Neg, value));
         output
     }
 }
@@ -332,8 +332,8 @@ impl AbstractField for SymbolicExprEF {
         code.push(Instruction32::e_assign_c(output, EF::zero()));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_ef(output, llzk.const_ef(EF::zero()));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_ef(output, llzk.const_ef(EF::zero()));
         output
     }
 
@@ -344,8 +344,8 @@ impl AbstractField for SymbolicExprEF {
         code.push(Instruction32::e_assign_c(output, EF::one()));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_ef(output, llzk.const_ef(EF::one()));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_ef(output, llzk.const_ef(EF::one()));
         output
     }
 
@@ -356,8 +356,8 @@ impl AbstractField for SymbolicExprEF {
         code.push(Instruction32::e_assign_c(output, EF::two()));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_ef(output, llzk.const_ef(EF::two()));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_ef(output, llzk.const_ef(EF::two()));
         output
     }
 
@@ -368,8 +368,8 @@ impl AbstractField for SymbolicExprEF {
         code.push(Instruction32::e_assign_c(output, EF::neg_one()));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_ef(output, llzk.const_ef(EF::neg_one()));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_ef(output, llzk.const_ef(EF::neg_one()));
         output
     }
 
@@ -380,8 +380,8 @@ impl AbstractField for SymbolicExprEF {
         code.push(Instruction32::e_assign_c(output, f));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_ef(output, llzk.const_ef(f));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_ef(output, llzk.const_ef(f));
         output
     }
 
@@ -392,8 +392,8 @@ impl AbstractField for SymbolicExprEF {
         code.push(Instruction32::e_assign_c(output, EF::from_bool(b)));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_ef(output, llzk.const_ef(EF::from_bool(b)));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_ef(output, llzk.const_ef(EF::from_bool(b)));
         output
     }
 
@@ -404,8 +404,8 @@ impl AbstractField for SymbolicExprEF {
         code.push(Instruction32::e_assign_c(output, EF::from_canonical_u8(n)));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_ef(output, llzk.const_ef(EF::from_canonical_u8(n)));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_ef(output, llzk.const_ef(EF::from_canonical_u8(n)));
         output
     }
 
@@ -416,8 +416,8 @@ impl AbstractField for SymbolicExprEF {
         code.push(Instruction32::e_assign_c(output, EF::from_canonical_u16(n)));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_ef(output, llzk.const_ef(EF::from_canonical_u16(n)));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_ef(output, llzk.const_ef(EF::from_canonical_u16(n)));
         output
     }
 
@@ -428,8 +428,8 @@ impl AbstractField for SymbolicExprEF {
         code.push(Instruction32::e_assign_c(output, EF::from_canonical_u32(n)));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_ef(output, llzk.const_ef(EF::from_canonical_u32(n)));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_ef(output, llzk.const_ef(EF::from_canonical_u32(n)));
         output
     }
 
@@ -440,8 +440,8 @@ impl AbstractField for SymbolicExprEF {
         code.push(Instruction32::e_assign_c(output, EF::from_canonical_u64(n)));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_ef(output, llzk.const_ef(EF::from_canonical_u64(n)));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_ef(output, llzk.const_ef(EF::from_canonical_u64(n)));
         output
     }
 
@@ -452,8 +452,8 @@ impl AbstractField for SymbolicExprEF {
         code.push(Instruction32::e_assign_c(output, EF::from_canonical_usize(n)));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_ef(output, llzk.const_ef(EF::from_canonical_usize(n)));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_ef(output, llzk.const_ef(EF::from_canonical_usize(n)));
         output
     }
 
@@ -464,8 +464,8 @@ impl AbstractField for SymbolicExprEF {
         code.push(Instruction32::e_assign_c(output, EF::from_wrapped_u32(n)));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_ef(output, llzk.const_ef(EF::from_wrapped_u32(n)));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_ef(output, llzk.const_ef(EF::from_wrapped_u32(n)));
         output
     }
 
@@ -476,8 +476,8 @@ impl AbstractField for SymbolicExprEF {
         code.push(Instruction32::e_assign_c(output, EF::from_wrapped_u64(n)));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_ef(output, llzk.const_ef(EF::from_wrapped_u64(n)));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_ef(output, llzk.const_ef(EF::from_wrapped_u64(n)));
         output
     }
 
@@ -488,8 +488,8 @@ impl AbstractField for SymbolicExprEF {
         code.push(Instruction32::e_assign_c(output, EF::generator()));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        llzk.assign_ef(output, llzk.const_ef(EF::generator()));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //llzk.assign_ef(output, llzk.const_ef(EF::generator()));
         output
     }
 }
@@ -502,9 +502,9 @@ impl From<SymbolicExprF> for SymbolicExprEF {
         code.push(Instruction32::ef_from_e(output, value));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let value = llzk.get_f(value);
-        llzk.assign_ef(output, llzk.f_to_ef(value));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let value = llzk.get_f(value);
+        //llzk.assign_ef(output, llzk.f_to_ef(value));
         output
     }
 }
@@ -519,10 +519,10 @@ impl Add<SymbolicExprF> for SymbolicExprEF {
         code.push(Instruction32::ef_add_ee(output, self, rhs));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let rhs = llzk.f_to_ef(llzk.get_f(rhs));
-        let lhs = llzk.get_ef(self);
-        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Add, rhs, lhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let rhs = llzk.f_to_ef(llzk.get_f(rhs));
+        //let lhs = llzk.get_ef(self);
+        //llzk.assign_ef(output, llzk.binop(llzk::BinOps::Add, rhs, lhs));
         output
     }
 }
@@ -534,10 +534,10 @@ impl AddAssign<SymbolicExprF> for SymbolicExprEF {
         code.push(Instruction32::ef_add_assign_e(*self, rhs));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let rhs = llzk.f_to_ef(llzk.get_f(rhs));
-        let lhs = llzk.get_ef(*self);
-        llzk.assign_ef(*self, llzk.binop(llzk::BinOps::Add, rhs, lhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let rhs = llzk.f_to_ef(llzk.get_f(rhs));
+        //let lhs = llzk.get_ef(*self);
+        //llzk.assign_ef(*self, llzk.binop(llzk::BinOps::Add, rhs, lhs));
     }
 }
 
@@ -551,10 +551,10 @@ impl Sub<SymbolicExprF> for SymbolicExprEF {
         code.push(Instruction32::ef_sub_ee(output, self, rhs));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let rhs = llzk.f_to_ef(llzk.get_f(rhs));
-        let lhs = llzk.get_ef(self);
-        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Sub, rhs, lhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let rhs = llzk.f_to_ef(llzk.get_f(rhs));
+        //let lhs = llzk.get_ef(self);
+        //llzk.assign_ef(output, llzk.binop(llzk::BinOps::Sub, rhs, lhs));
         output
     }
 }
@@ -566,10 +566,10 @@ impl SubAssign<SymbolicExprF> for SymbolicExprEF {
         code.push(Instruction32::ef_sub_assign_e(*self, rhs));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let rhs = llzk.f_to_ef(llzk.get_f(rhs));
-        let lhs = llzk.get_ef(*self);
-        llzk.assign_ef(*self, llzk.binop(llzk::BinOps::Sub, rhs, lhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let rhs = llzk.f_to_ef(llzk.get_f(rhs));
+        //let lhs = llzk.get_ef(*self);
+        //llzk.assign_ef(*self, llzk.binop(llzk::BinOps::Sub, rhs, lhs));
     }
 }
 
@@ -583,10 +583,10 @@ impl Mul<SymbolicExprF> for SymbolicExprEF {
         code.push(Instruction32::ef_mul_ee(output, self, rhs));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let rhs = llzk.f_to_ef(llzk.get_f(rhs));
-        let lhs = llzk.get_ef(self);
-        llzk.assign_ef(output, llzk.binop(llzk::BinOps::Mul, rhs, lhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let rhs = llzk.f_to_ef(llzk.get_f(rhs));
+        //let lhs = llzk.get_ef(self);
+        //llzk.assign_ef(output, llzk.binop(llzk::BinOps::Mul, rhs, lhs));
         output
     }
 }
@@ -598,10 +598,10 @@ impl MulAssign<SymbolicExprF> for SymbolicExprEF {
         code.push(Instruction32::ef_mul_assign_e(*self, rhs));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let rhs = llzk.f_to_ef(llzk.get_f(rhs));
-        let lhs = llzk.get_ef(*self);
-        llzk.assign_ef(*self, llzk.binop(llzk::BinOps::Mul, rhs, lhs));
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let rhs = llzk.f_to_ef(llzk.get_f(rhs));
+        //let lhs = llzk.get_ef(*self);
+        //llzk.assign_ef(*self, llzk.binop(llzk::BinOps::Mul, rhs, lhs));
     }
 }
 
@@ -614,9 +614,9 @@ impl AbstractExtensionField<SymbolicExprF> for SymbolicExprEF {
         code.push(Instruction32::ef_from_e(output, value));
         drop(code);
         // LLZK_CODEGEN
-        let llzk = LLZK_CODEGEN.lock().unwrap();
-        let value = llzk.f_to_ef(llzk.get_f(value));
-        llzk.assign_ef(output, value);
+        //let llzk = LLZK_CODEGEN.lock().unwrap();
+        //let value = llzk.f_to_ef(llzk.get_f(value));
+        //llzk.assign_ef(output, value);
         output
     }
 
