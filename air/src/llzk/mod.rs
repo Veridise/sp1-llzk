@@ -25,6 +25,9 @@ use p3_air::PermutationAirBuilder;
 use p3_field::AbstractField;
 use p3_matrix::dense::RowMajorMatrixView;
 use p3_matrix::stack::VerticalPair;
+use sp1_core_machine::air::WordAirBuilder;
+use sp1_stark::air::BaseAirBuilder;
+use sp1_stark::air::ByteAirBuilder;
 use sp1_stark::air::EmptyMessageBuilder;
 use sp1_stark::air::MachineAir;
 use sp1_stark::air::MultiTableAirBuilder;
@@ -44,11 +47,27 @@ pub type ExtFelt = field::ExtFelt;
 const EXT_FELT_DEGREE: usize = field::EXT_FELT_DEGREE;
 const FIELD_BETA: usize = field::FIELD_BETA;
 
+pub enum OutputFormats {
+    Assembly,
+    Bytecode,
+}
+
 /// Final output type of the llzk code generator.
-pub type CodegenOutput = ();
+pub struct CodegenOutput {
+    bytes: *mut u8,
+    size: i32,
+    format: OutputFormats,
+}
+
+impl Drop for CodegenOutput {
+    fn drop(&mut self) {
+        let codegen = Codegen::instance();
+        codegen.release_output(self);
+    }
+}
 
 /// A reference to a name in MLIR.
-pub type Symbol = ();
+pub type Symbol = llzk_bridge::Symbol;
 
 /// The order of the arguments in the constraint function
 #[repr(u8)]
@@ -180,7 +199,59 @@ impl<'a> AirBuilder for CodegenBuilder<'a> {
         codegen.emit_eq(*x, *zero);
     }
 }
+/*
 
+Implementing this trait doesn't work this way so it's commented out for now.
+
+impl WordAirBuilder for CodegenBuilder<'_> {
+    fn slice_range_check_u8(
+        &mut self,
+        input: &[impl Into<Self::Expr> + Clone],
+        mult: impl Into<Self::Expr> + Clone,
+    ) {
+        // Generate range check constraints with LLZK here
+        // Check that number is 8 bit long
+        let mut index = 0;
+        while index + 1 < input.len() {
+            self.send_byte(
+                Self::Expr::from_canonical_u8(sp1_core_executor::ByteOpcode::U8Range as u8),
+                Self::Expr::zero(),
+                input[index].clone(),
+                input[index + 1].clone(),
+                mult.clone(),
+            );
+            index += 2;
+        }
+        if index < input.len() {
+            self.send_byte(
+                Self::Expr::from_canonical_u8(sp1_core_executor::ByteOpcode::U8Range as u8),
+                Self::Expr::zero(),
+                input[index].clone(),
+                Self::Expr::zero(),
+                mult.clone(),
+            );
+        }
+    }
+
+    fn slice_range_check_u16(
+        &mut self,
+        input: &[impl Into<Self::Expr> + Copy],
+        mult: impl Into<Self::Expr> + Clone,
+    ) {
+        // Generate range check constraints with LLZK here
+        // Check that number is 16 bit long
+        input.iter().for_each(|limb| {
+            self.send_byte(
+                Self::Expr::from_canonical_u8(sp1_core_executor::ByteOpcode::U16Range as u8),
+                *limb,
+                Self::Expr::zero(),
+                Self::Expr::zero(),
+                mult.clone(),
+            );
+        });
+    }
+}
+*/
 impl ExtensionBuilder for CodegenBuilder<'_> {
     type EF = ExtFelt;
     type ExprEF = ExtFeltValue;

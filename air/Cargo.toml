@@ -14,3 +14,4 @@ sp1-core-executor = { workspace = true }
 p3-baby-bear = { workspace = true }
 p3-field = { workspace = true }
 tracing = "0.1.40"
+llzk-bridge = { path = "../llzk-bridge" }

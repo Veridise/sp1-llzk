@@ -293,7 +293,10 @@ mod tests {
     use sp1_core_executor::ExecutionRecord;
     use sp1_core_executor::Program;
     use sp1_core_machine::{
-        operations::AddOperation, operations::AndOperation, riscv::RiscvAir, utils::setup_logger,
+        operations::AndOperation,
+        operations::{Add4Operation, AddOperation},
+        riscv::RiscvAir,
+        utils::setup_logger,
     };
     use sp1_derive::AlignedBorrow;
     use sp1_stark::Chip;
@@ -313,10 +316,21 @@ mod tests {
         op: AddOperation<T>,
     }
 
+    #[derive(AlignedBorrow, Default, Clone, Copy)]
+    #[repr(C)]
+    struct Add4Cols<T> {
+        a: Word<T>,
+        b: Word<T>,
+        c: Word<T>,
+        d: Word<T>,
+        op: Add4Operation<T>,
+    }
+
     #[derive(Default)]
     struct AddChip;
 
     pub const NUM_ADD_SUB_COLS: usize = size_of::<AddCols<u8>>();
+    pub const NUM_ADD4_SUB_COLS: usize = size_of::<Add4Cols<u8>>();
 
     impl<F: PrimeField32> MachineAir<F> for AddChip {
         type Record = ExecutionRecord;
@@ -356,13 +370,66 @@ mod tests {
 
     impl<AB> Air<AB> for AddChip
     where
-        AB: SP1AirBuilder,
+        AB: SP1AirBuilder<Var = SymbolicVarF>,
     {
         fn eval(&self, builder: &mut AB) {
             let main = builder.main();
             let local = main.row_slice(0);
             let local: &AddCols<AB::Var> = (*local).borrow();
             AddOperation::<AB::F>::eval(builder, local.a, local.b, local.op, AB::Expr::one());
+        }
+    }
+
+    #[derive(Default)]
+    struct Add4Chip;
+
+    pub const NUM_ADD_SUB_COLS: usize = size_of::<Add4Cols<u8>>();
+
+    impl<F: PrimeField32> MachineAir<F> for Add4Chip {
+        type Record = ExecutionRecord;
+
+        type Program = Program;
+
+        fn name(&self) -> String {
+            "Add".to_string()
+        }
+
+        fn num_rows(&self, input: &Self::Record) -> Option<usize> {
+            todo!()
+        }
+
+        fn generate_trace(
+            &self,
+            input: &ExecutionRecord,
+            _: &mut ExecutionRecord,
+        ) -> RowMajorMatrix<F> {
+            todo!()
+        }
+
+        fn included(&self, shard: &Self::Record) -> bool {
+            todo!()
+        }
+
+        fn local_only(&self) -> bool {
+            todo!()
+        }
+    }
+
+    impl<F> BaseAir<F> for Add4Chip {
+        fn width(&self) -> usize {
+            NUM_ADD4_SUB_COLS
+        }
+    }
+
+    impl<AB> Air<AB> for Add4Chip
+    where
+        AB: SP1AirBuilder,
+    {
+        fn eval(&self, builder: &mut AB) {
+            let main = builder.main();
+            let local = main.row_slice(0);
+            let local: &Add4Cols<AB::Var> = (*local).borrow();
+            Add4Operation::<AB::F>::eval(builder, local.a, local.b, local.c, local.d, local.op);
         }
     }
 

@@ -3,10 +3,7 @@ use std::ops::{Add, Mul, Sub};
 
 use crate::instruction::f_constant;
 use crate::picusextractor::PicusBinop;
-use crate::{
-    instruction::Instruction32, symbolic_expr_f::SymbolicExprF, CUDA_P3_EVAL_CODE, F,
-    PICUS_EXTRACTOR,
-};
+use crate::{instruction::Instruction32, symbolic_expr_f::SymbolicExprF, CUDA_P3_EVAL_CODE, PICUS_EXTRACTOR, F};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SymbolicVarF {
@@ -113,9 +110,6 @@ impl From<SymbolicVarF> for SymbolicExprF {
         let var = pe.get_picus_var(&val);
         pe.expr_map.insert(output, var);
         drop(pe);
-        // LLZK_CODEGEN
-        //let llzk = LLZK_CODEGEN.lock().unwrap();
-        //llzk.assign_f(output, llzk.load_var(val));
         output
     }
 }
@@ -132,11 +126,6 @@ impl Add<F> for SymbolicVarF {
         let mut pe = PICUS_EXTRACTOR.lock().unwrap();
         pe.process_binop_var_const(&output, &self, &rhs, PicusBinop::Add);
         drop(pe);
-        // LLZK_CODEGEN
-        //let llzk = LLZK_CODEGEN.lock().unwrap();
-        //let lhs = llzk.load_var(self);
-        //let rhs = llzk.const_f(rhs);
-        //llzk.assign_f(output, llzk.binop(llzk::BinOps::Add, lhs, rhs));
         output
     }
 }
@@ -153,11 +142,6 @@ impl Add<SymbolicVarF> for SymbolicVarF {
         let mut pe = PICUS_EXTRACTOR.lock().unwrap();
         pe.process_binop_two_var(&output, &self, &rhs, PicusBinop::Add);
         drop(pe);
-        // LLZK_CODEGEN
-        //let llzk = LLZK_CODEGEN.lock().unwrap();
-        //let lhs = llzk.load_var(self);
-        //let rhs = llzk.load_var(rhs);
-        //llzk.assign_f(output, llzk.binop(llzk::BinOps::Add, lhs, rhs));
         output
     }
 }
@@ -172,13 +156,8 @@ impl Add<SymbolicExprF> for SymbolicVarF {
         code.push(Instruction32::f_add_ve(output, self, rhs));
         drop(code);
         let mut pe = PICUS_EXTRACTOR.lock().unwrap();
-        pe.process_binop_var(&output, &rhs, &self, PicusBinop::Add);
+        pe.process_binop_var(&output,  &rhs, &self, PicusBinop::Add);
         drop(pe);
-        // LLZK_CODEGEN
-        //let llzk = LLZK_CODEGEN.lock().unwrap();
-        //let lhs = llzk.load_var(self);
-        //let rhs = llzk.get_f(rhs);
-        //llzk.assign_f(output, llzk.binop(llzk::BinOps::Add, lhs, rhs));
         output
     }
 }
@@ -195,11 +174,6 @@ impl Sub<F> for SymbolicVarF {
         let mut pe = PICUS_EXTRACTOR.lock().unwrap();
         pe.process_binop_var_const(&output, &self, &rhs, PicusBinop::Sub);
         drop(pe);
-        // LLZK_CODEGEN
-        //let llzk = LLZK_CODEGEN.lock().unwrap();
-        //let lhs = llzk.load_var(self);
-        //let rhs = llzk.const_f(rhs);
-        //llzk.assign_f(output, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
         output
     }
 }
@@ -216,11 +190,6 @@ impl Sub<SymbolicVarF> for SymbolicVarF {
         let mut pe = PICUS_EXTRACTOR.lock().unwrap();
         pe.process_binop_two_var(&output, &self, &rhs, PicusBinop::Sub);
         drop(pe);
-        // LLZK_CODEGEN
-        //let llzk = LLZK_CODEGEN.lock().unwrap();
-        //let lhs = llzk.load_var(self);
-        //let rhs = llzk.load_var(rhs);
-        //llzk.assign_f(output, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
         output
     }
 }
@@ -235,13 +204,8 @@ impl Sub<SymbolicExprF> for SymbolicVarF {
         code.push(Instruction32::f_sub_ve(output, self, rhs));
         drop(code);
         let mut pe = PICUS_EXTRACTOR.lock().unwrap();
-        pe.process_binop_var(&output, &rhs, &self, PicusBinop::Sub);
+        pe.process_binop_var(&output,  &rhs, &self, PicusBinop::Sub);
         drop(pe);
-        // LLZK_CODEGEN
-        //let llzk = LLZK_CODEGEN.lock().unwrap();
-        //let lhs = llzk.load_var(self);
-        //let rhs = llzk.get_f(rhs);
-        //llzk.assign_f(output, llzk.binop(llzk::BinOps::Sub, lhs, rhs));
         output
     }
 }
@@ -258,11 +222,6 @@ impl Mul<F> for SymbolicVarF {
         let mut pe = PICUS_EXTRACTOR.lock().unwrap();
         pe.process_binop_var_const(&output, &self, &rhs, PicusBinop::Mul);
         drop(pe);
-        // LLZK_CODEGEN
-        //let llzk = LLZK_CODEGEN.lock().unwrap();
-        //let lhs = llzk.load_var(self);
-        //let rhs = llzk.const_f(rhs);
-        //llzk.assign_f(output, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
         output
     }
 }
@@ -279,11 +238,6 @@ impl Mul<SymbolicVarF> for SymbolicVarF {
         let mut pe = PICUS_EXTRACTOR.lock().unwrap();
         pe.process_binop_two_var(&output, &self, &rhs, PicusBinop::Mul);
         drop(pe);
-        // LLZK_CODEGEN
-        //let llzk = LLZK_CODEGEN.lock().unwrap();
-        //let lhs = llzk.load_var(self);
-        //let rhs = llzk.load_var(rhs);
-        //llzk.assign_f(output, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
         output
     }
 }
@@ -298,13 +252,8 @@ impl Mul<SymbolicExprF> for SymbolicVarF {
         code.push(Instruction32::f_mul_ve(output, self, rhs));
         drop(code);
         let mut pe = PICUS_EXTRACTOR.lock().unwrap();
-        pe.process_binop_var(&output, &rhs, &self, PicusBinop::Mul);
+        pe.process_binop_var(&output,  &rhs, &self, PicusBinop::Mul);
         drop(pe);
-        // LLZK_CODEGEN
-        //let llzk = LLZK_CODEGEN.lock().unwrap();
-        //let lhs = llzk.load_var(self);
-        //let rhs = llzk.get_f(rhs);
-        //llzk.assign_f(output, llzk.binop(llzk::BinOps::Mul, lhs, rhs));
         output
     }
 }
