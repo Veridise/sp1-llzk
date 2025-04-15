@@ -42,3 +42,7 @@ int commit_struct(CodegenState *, unsigned char **, int *, OutputFormat) {
 
 /// Releases the memory used to store the IR output.
 void release_output_buffer(CodegenState *, unsigned char **) {}
+
+void *manage_data_lifetime(CodegenState *, const void *, unsigned long) {
+  return nullptr;
+}

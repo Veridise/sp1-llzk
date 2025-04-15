@@ -306,4 +306,6 @@ impl<'a> AirBuilderWithPublicValues for CodegenBuilder<'a> {
     }
 }
 
+// TODO: Implement here the range check thing by using a custom MessageBuilder instead of the empty
+// one.
 impl EmptyMessageBuilder for CodegenBuilder<'_> {}

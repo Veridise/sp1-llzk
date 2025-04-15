@@ -11,7 +11,7 @@
         pkgs = import nixpkgs { inherit system; };
         naersk-lib = pkgs.callPackage naersk { };
       in rec {
-        defaultPackage = with pkgs; naersk-lib.buildPackage {
+        default = with pkgs; naersk-lib.buildPackage {
            name = "sp1-llzk";
            pname = "sp1-llzk";
            src = ./.;

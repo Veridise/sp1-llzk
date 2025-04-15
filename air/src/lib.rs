@@ -111,10 +111,6 @@ impl<'a> AirBuilder for SymbolicProverFolder<'a> {
         if let Some(picus_expr) = maybe_expr {
             picusextractor.eqs.push(picus_expr.clone());
         }
-        // LLZK_CODEGEN
-        //let llzk = LLZK_CODEGEN.lock().unwrap();
-        //let zero = llzk.const_f(F::zero());
-        //llzk.emit_eq(llzk.get_f(x), zero);
     }
 }
 
@@ -131,10 +127,6 @@ impl<'a> ExtensionBuilder for SymbolicProverFolder<'a> {
         let mut code = CUDA_P3_EVAL_CODE.lock().unwrap();
         code.push(Instruction32::e_assert_zero(x));
         drop(code);
-        // LLZK_CODEGEN
-        //let llzk = LLZK_CODEGEN.lock().unwrap();
-        //let zero = llzk.const_ef(EF::zero());
-        //llzk.emit_eq(llzk.get_ef(x), zero);
     }
 }
 
@@ -259,26 +251,17 @@ pub fn CUDA_P3_EVAL_RESET() {
     *CUDA_P3_EVAL_EXPR_EF_CTR.lock().unwrap() = 0;
 }
 
-pub fn codegen_llzk_eval<A>(chip: &Chip<F, A>) -> llzk::CodegenOutput
+pub fn codegen_llzk_eval<A>(chip: &Chip<F, A>, n_inputs: usize) -> llzk::CodegenOutput
 where
     A: for<'a> Air<llzk::CodegenBuilder<'a>> + MachineAir<F>,
 {
     let binding = llzk::Codegen::instance();
     let codegen = binding.initialize(&chip);
 
-    let vars = llzk::CodegenChipVars::from_chip::<A>(chip, 8, &codegen);
+    let vars = llzk::CodegenChipVars::from_chip::<A>(chip, n_inputs, &codegen);
     let mut builder = llzk::CodegenBuilder::new(&vars);
     chip.eval(&mut builder);
     codegen.extract_output()
-    // Commented out for reference when adding the inputs and outputs of the circuit
-    //for i in 0..8 {
-    //    pe.add_input(&main.local[i]);
-    //}
-    //for i in 8..15 {
-    //    pe.add_output(&main.local[i]);
-    //}
-    //let output = codegen.extract_output();
-    //drop(codegen);
 }
 
 #[cfg(test)]
@@ -316,21 +299,10 @@ mod tests {
         op: AddOperation<T>,
     }
 
-    #[derive(AlignedBorrow, Default, Clone, Copy)]
-    #[repr(C)]
-    struct Add4Cols<T> {
-        a: Word<T>,
-        b: Word<T>,
-        c: Word<T>,
-        d: Word<T>,
-        op: Add4Operation<T>,
-    }
-
     #[derive(Default)]
     struct AddChip;
 
     pub const NUM_ADD_SUB_COLS: usize = size_of::<AddCols<u8>>();
-    pub const NUM_ADD4_SUB_COLS: usize = size_of::<Add4Cols<u8>>();
 
     impl<F: PrimeField32> MachineAir<F> for AddChip {
         type Record = ExecutionRecord;
@@ -370,66 +342,13 @@ mod tests {
 
     impl<AB> Air<AB> for AddChip
     where
-        AB: SP1AirBuilder<Var = SymbolicVarF>,
+        AB: SP1AirBuilder,
     {
         fn eval(&self, builder: &mut AB) {
             let main = builder.main();
             let local = main.row_slice(0);
             let local: &AddCols<AB::Var> = (*local).borrow();
             AddOperation::<AB::F>::eval(builder, local.a, local.b, local.op, AB::Expr::one());
-        }
-    }
-
-    #[derive(Default)]
-    struct Add4Chip;
-
-    pub const NUM_ADD_SUB_COLS: usize = size_of::<Add4Cols<u8>>();
-
-    impl<F: PrimeField32> MachineAir<F> for Add4Chip {
-        type Record = ExecutionRecord;
-
-        type Program = Program;
-
-        fn name(&self) -> String {
-            "Add".to_string()
-        }
-
-        fn num_rows(&self, input: &Self::Record) -> Option<usize> {
-            todo!()
-        }
-
-        fn generate_trace(
-            &self,
-            input: &ExecutionRecord,
-            _: &mut ExecutionRecord,
-        ) -> RowMajorMatrix<F> {
-            todo!()
-        }
-
-        fn included(&self, shard: &Self::Record) -> bool {
-            todo!()
-        }
-
-        fn local_only(&self) -> bool {
-            todo!()
-        }
-    }
-
-    impl<F> BaseAir<F> for Add4Chip {
-        fn width(&self) -> usize {
-            NUM_ADD4_SUB_COLS
-        }
-    }
-
-    impl<AB> Air<AB> for Add4Chip
-    where
-        AB: SP1AirBuilder,
-    {
-        fn eval(&self, builder: &mut AB) {
-            let main = builder.main();
-            let local = main.row_slice(0);
-            let local: &Add4Cols<AB::Var> = (*local).borrow();
-            Add4Operation::<AB::F>::eval(builder, local.a, local.b, local.c, local.d, local.op);
         }
     }
 
@@ -470,7 +389,7 @@ mod tests {
         let chips = machine.chips();
         let mut chip = AddChip;
         let mut chip = Chip::new(chip);
-        let () = codegen_llzk_eval(&chip);
+        let _ = codegen_llzk_eval(&chip, 8);
 
         // for chip in chips {
         //     if chip.name() == "AddSub" {

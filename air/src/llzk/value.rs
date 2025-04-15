@@ -11,8 +11,7 @@ use super::{
 };
 
 /// Opaque struct that represents a IR value in llzk.
-#[derive(Clone, Copy, Debug, Default)]
-pub struct Value {}
+pub type Value = llzk_bridge::Value;
 
 impl From<FeltValue> for Value {
     fn from(value: FeltValue) -> Self {
@@ -28,7 +27,7 @@ impl From<ExtFeltValue> for Value {
 
 #[derive(Clone, Default, Copy, Debug)]
 pub struct FeltValue {
-    inner: Value,
+    pub(crate) inner: Value,
 }
 
 impl Deref for FeltValue {
