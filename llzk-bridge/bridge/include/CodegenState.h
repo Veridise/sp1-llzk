@@ -1,6 +1,9 @@
 #ifndef _CODEGEN_STATE
 #define _CODEGEN_STATE
 
+#include <mlir-c/Support.h>
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -12,8 +15,10 @@ typedef struct CodegenState {
 
 /// Information used for initializing a struct target.
 typedef struct StructSpec {
-  unsigned char *name;
-  int namelen;
+  MlirStringRef name;
+  size_t n_inputs, n_outputs, n_preprocessed, n_permutations,
+      n_permutation_challenges, n_public_values, global_cumulative_sum_total;
+  long long extfelt_degree;
 } StructSpec;
 
 /// Final output format of the IR.
@@ -42,7 +47,7 @@ void release_output_buffer(CodegenState *, unsigned char **);
 
 /// Creates a copy of a chunk of bytes and ties the copy to the lifetime of the
 /// state.
-void *manage_data_lifetime(CodegenState *, const void *, unsigned long);
+void *manage_data_lifetime(CodegenState *, const void *, size_t);
 
 #ifdef __cplusplus
 }

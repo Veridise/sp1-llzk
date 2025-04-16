@@ -4,6 +4,7 @@ use super::{
     value::{ExtFeltValue, FeltValue, Value},
     Codegen, ExtFelt, Felt, Symbol,
 };
+use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Copy)]
 pub enum FeltVar {
@@ -19,7 +20,9 @@ impl From<FeltVar> for FeltValue {
     fn from(val: FeltVar) -> Self {
         let codegen = Codegen::instance();
         match val {
-            FeltVar::Field { name } => codegen.read_self_field(name).into(),
+            FeltVar::Field { name } => {
+                codegen.read_self_field(name, codegen.get_felt_type()).into()
+            }
             FeltVar::ArrayArg { arg, idx } => {
                 let index = codegen.const_index(idx);
                 codegen.read_array(arg, index).into()

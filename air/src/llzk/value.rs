@@ -4,13 +4,14 @@ use std::{
 };
 
 use p3_field::{AbstractExtensionField, AbstractField};
+use std::sync::{Arc, Mutex};
 
 use super::{
     vars::{ExtFeltVar, FeltVar},
     Codegen, ExtFelt, Felt, EXT_FELT_DEGREE, FIELD_BETA,
 };
 
-/// Opaque struct that represents a IR value in llzk.
+/// Opaque type that represents a IR value in llzk.
 pub type Value = llzk_bridge::Value;
 
 impl From<FeltValue> for Value {
@@ -25,16 +26,19 @@ impl From<ExtFeltValue> for Value {
     }
 }
 
-#[derive(Clone, Default, Copy, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct FeltValue {
     pub(crate) inner: Value,
 }
 
-impl Deref for FeltValue {
-    type Target = Value;
+#[derive(Clone, Debug, Copy)]
+pub struct ExtFeltValue {
+    inner: Value,
+}
 
-    fn deref(&self) -> &Self::Target {
-        &self.inner
+impl Default for FeltValue {
+    fn default() -> Self {
+        <Self as AbstractField>::zero()
     }
 }
 
@@ -107,6 +111,8 @@ impl From<Felt> for FeltValue {
 
 impl From<Value> for FeltValue {
     fn from(value: Value) -> Self {
+        // TODO: Change this to TryFrom and check that the value is of the expected type.
+        // Alternatively auto convert types or just generate malformed IR and complain later.
         Self { inner: value }
     }
 }
@@ -189,21 +195,21 @@ impl<'a> Mul<FeltVar> for FeltValue {
 impl AddAssign for FeltValue {
     fn add_assign(&mut self, rhs: Self) {
         let new_value = *self + rhs;
-        self.inner = *new_value;
+        self.inner = new_value.into();
     }
 }
 
 impl SubAssign for FeltValue {
     fn sub_assign(&mut self, rhs: Self) {
         let new_value = *self - rhs;
-        self.inner = *new_value;
+        self.inner = new_value.into();
     }
 }
 
 impl MulAssign for FeltValue {
     fn mul_assign(&mut self, rhs: Self) {
         let new_value = *self * rhs;
-        self.inner = *new_value;
+        self.inner = new_value.into();
     }
 }
 
@@ -236,16 +242,9 @@ impl Product for FeltValue {
     }
 }
 
-#[derive(Clone, Default, Debug, Copy)]
-pub struct ExtFeltValue {
-    inner: Value,
-}
-
-impl Deref for ExtFeltValue {
-    type Target = Value;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
+impl Default for ExtFeltValue {
+    fn default() -> Self {
+        <Self as AbstractField>::zero()
     }
 }
 
@@ -423,19 +422,19 @@ impl Mul<ExtFeltVar> for ExtFeltValue {
 
 impl AddAssign for ExtFeltValue {
     fn add_assign(&mut self, rhs: Self) {
-        self.inner = *(*self + rhs);
+        self.inner = (*self + rhs).into();
     }
 }
 
 impl SubAssign for ExtFeltValue {
     fn sub_assign(&mut self, rhs: Self) {
-        self.inner = *(*self - rhs);
+        self.inner = (*self - rhs).into();
     }
 }
 
 impl MulAssign for ExtFeltValue {
     fn mul_assign(&mut self, rhs: Self) {
-        self.inner = *(*self * rhs);
+        self.inner = (*self * rhs).into();
     }
 }
 
@@ -502,19 +501,19 @@ impl Mul<FeltValue> for ExtFeltValue {
 
 impl AddAssign<FeltValue> for ExtFeltValue {
     fn add_assign(&mut self, rhs: FeltValue) {
-        self.inner = *(*self + rhs);
+        self.inner = (*self + rhs).into();
     }
 }
 
 impl SubAssign<FeltValue> for ExtFeltValue {
     fn sub_assign(&mut self, rhs: FeltValue) {
-        self.inner = *(*self - rhs);
+        self.inner = (*self - rhs).into();
     }
 }
 
 impl MulAssign<FeltValue> for ExtFeltValue {
     fn mul_assign(&mut self, rhs: FeltValue) {
-        self.inner = *(*self * rhs);
+        self.inner = (*self * rhs).into();
     }
 }
 
@@ -527,7 +526,12 @@ impl AbstractExtensionField<FeltValue> for ExtFeltValue {
 
     fn from_base_slice(values: &[FeltValue]) -> Self {
         let codegen = Codegen::instance();
-        codegen.literal_array(values, &[<Self as AbstractExtensionField<FeltValue>>::D]).into()
+        codegen
+            .literal_array(
+                values,
+                &[<Self as AbstractExtensionField<FeltValue>>::D.try_into().unwrap()],
+            )
+            .into()
     }
 
     fn from_base_fn<F: FnMut(usize) -> FeltValue>(f: F) -> Self {
@@ -540,7 +544,7 @@ impl AbstractExtensionField<FeltValue> for ExtFeltValue {
         let arr: [FeltValue; <Self as AbstractExtensionField<FeltValue>>::D] =
             core::array::from_fn(|i: usize| {
                 let index = codegen.const_index(i);
-                codegen.read_array(**self, index).into()
+                codegen.read_array((*self).into(), index).into()
             });
         codegen.manage(&arr)
     }

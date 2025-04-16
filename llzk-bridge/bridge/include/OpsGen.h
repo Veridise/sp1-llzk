@@ -3,22 +3,27 @@
 
 #include "CodegenState.h"
 #include "Symbol.h"
+#include <mlir-c/IR.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-typedef int Value; // TODO Use the actual MLIR-C type
+typedef MlirValue Value;
+typedef MlirType ValueType;
+
+/// Returns llzk::FeltType
+ValueType get_felt_type(CodegenState *);
 
 /// Creates an arith.constant op of Index type.
 Value create_const_index(CodegenState *, unsigned long);
 
 /// Creates an llzk.constfelt op of Felt type.
-Value create_const_felt(CodegenState *, unsigned long);
+Value create_const_felt(CodegenState *, MlirStringRef);
 
 /// Creates a llzk.new_array op with the given values.
-Value create_array(CodegenState *, Value *, unsigned long, unsigned long *,
-                   unsigned long);
+Value create_array(CodegenState *, const Value *, size_t, const int64_t *,
+                   size_t);
 
 /// Returns a value representing the n-th element of an array.
 Value create_read_array(CodegenState *, Value, Value);
@@ -27,7 +32,7 @@ Value create_read_array(CodegenState *, Value, Value);
 Value get_self_value(CodegenState *);
 
 /// Returns a Value representing the contents of a field.
-Value create_field_read(CodegenState *, Value, Symbol);
+Value create_field_read(CodegenState *, Value, Symbol, ValueType);
 
 /// Returns the n-th argument of the target struct's constrain function.
 Value get_func_argument(CodegenState *, unsigned char);

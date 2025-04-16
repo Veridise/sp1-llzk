@@ -5,7 +5,12 @@ use std::ops::Deref;
 use super::value::FeltValue;
 use super::{value::Value, CodegenOutput, Felt};
 use super::{Args, CodegenBuilder, Symbol};
+use crate::llzk::Type;
+use crate::llzk::EXT_FELT_DEGREE;
+use crate::llzk::PERM_CHALLENGES_COUNT;
 use llzk_bridge::CodegenState;
+use p3_air::BaseAir;
+use sp1_stark::PROOF_MAX_NUM_PVS;
 use std::ffi::c_void;
 
 /// A wrapper struct used for type safety around the initialization of the llzk struct
@@ -33,17 +38,13 @@ impl Codegen {
         }
     }
 
+    /// Creates a symbol with the contents of the given str managed by Codegen.
+    /// Internally points to a MLIR StringAttr's content.
     pub fn str_to_symbol(&self, str: &str) -> Symbol {
-        let mut copy = String::from(str);
-        unsafe {
-            llzk_bridge::create_symbol(
-                self.inner,
-                copy.as_mut_ptr(),
-                copy.len().try_into().unwrap(),
-            )
-        }
+        unsafe { llzk_bridge::create_symbol(self.inner, str.as_ptr() as *const i8, str.len()) }
     }
 
+    /// Returns a Value for the given arguments of the constrain function.
     pub fn get_func_arg(&self, arg: Args) -> Value {
         self.assert_has_struct("Cannot get function argument if there is no struct");
         unsafe { llzk_bridge::get_func_argument(self.inner, arg as u8) }
@@ -60,17 +61,23 @@ impl Codegen {
 
     /// Initializes a LLZK struct with the given chip and sets it as the struct where IR is going
     /// to be generated
-    pub fn initialize<'a, A>(&self, chip: &Chip<Felt, A>) -> CodegenWithStruct
+    pub fn initialize<'a, A>(&self, chip: &Chip<Felt, A>, n_inputs: usize) -> CodegenWithStruct
     where
         A: Air<CodegenBuilder<'a>> + MachineAir<Felt>,
     {
         if unsafe { llzk_bridge::has_struct(self.inner) } != 0 {
             panic!("Cannot initialize a struct without commiting the previous one!");
         }
-        let mut name = chip.name().clone();
         let spec = llzk_bridge::StructSpec {
-            name: name.as_mut_ptr(),
-            namelen: name.len().try_into().unwrap(),
+            name: chip.name().as_str().into(),
+            n_inputs,
+            n_outputs: chip.width() - n_inputs,
+            n_preprocessed: chip.preprocessed_width(),
+            n_permutations: chip.permutation_width(),
+            n_permutation_challenges: PERM_CHALLENGES_COUNT,
+            n_public_values: PROOF_MAX_NUM_PVS,
+            global_cumulative_sum_total: 14,
+            extfelt_degree: EXT_FELT_DEGREE as i64,
         };
         unsafe {
             llzk_bridge::initialize_struct(self.inner, spec);
@@ -122,34 +129,38 @@ impl Codegen {
     }
 
     /// Creates a literal array of values
-    pub fn literal_array<I: Into<Value> + Clone>(&self, values: &[I], sizes: &[usize]) -> Value {
+    pub fn literal_array<I: Into<Value> + Clone>(&self, values: &[I], sizes: &[i64]) -> Value {
         self.assert_has_struct("Cannot create op without a target struct");
-        let mut values = values.iter().map(|v| v.clone().into()).collect::<Vec<Value>>();
-        let mut sizes = sizes.into_iter().map(|s| *s as u64).collect::<Vec<u64>>();
+        let values = values.iter().map(|v| v.clone().into()).collect::<Vec<Value>>();
         unsafe {
             llzk_bridge::create_array(
                 self.inner,
-                values.as_mut_ptr(),
-                values.len().try_into().unwrap(),
-                sizes.as_mut_ptr(),
-                sizes.len().try_into().unwrap(),
+                values.as_ptr(),
+                values.len(),
+                sizes.as_ptr(),
+                sizes.len(),
             )
         }
     }
 
+    /// Returns the type representing felts.
+    pub fn get_felt_type(&self) -> Type {
+        unsafe { llzk_bridge::get_felt_type(self.inner) }
+    }
+
     /// Returns the value contained in a field of the current struct
-    pub fn read_self_field(&self, name: Symbol) -> Value {
+    pub fn read_self_field(&self, name: Symbol, field_type: Type) -> Value {
         self.assert_has_struct("Cannot create op without a target struct");
         unsafe {
             let struct_self = llzk_bridge::get_self_value(self.inner);
-            llzk_bridge::create_field_read(self.inner, struct_self, name)
+            llzk_bridge::create_field_read(self.inner, struct_self, name, field_type)
         }
     }
 
     /// Generates a `llzk.constfelt` op with the given value
     pub fn const_felt(&self, value: Felt) -> Value {
         self.assert_has_struct("Cannot create op without a target struct");
-        unsafe { llzk_bridge::create_const_felt(self.inner, todo!()) }
+        unsafe { llzk_bridge::create_const_felt(self.inner, value.to_string().as_str().into()) }
     }
 
     /// Generates a `llzk.emit_eq` operation over two field elements.
@@ -161,25 +172,25 @@ impl Codegen {
     /// Generates an add operation between two felts.
     pub fn felt_add(&self, lhs: FeltValue, rhs: FeltValue) -> FeltValue {
         self.assert_has_struct("Cannot create op without a target struct");
-        FeltValue { inner: unsafe { llzk_bridge::create_felt_add(self.inner, *lhs, *rhs) } }
+        FeltValue::from(unsafe { llzk_bridge::create_felt_add(self.inner, lhs.into(), rhs.into()) })
     }
 
     /// Generates an sub operation between two felts.
     pub fn felt_sub(&self, lhs: FeltValue, rhs: FeltValue) -> FeltValue {
         self.assert_has_struct("Cannot create op without a target struct");
-        FeltValue { inner: unsafe { llzk_bridge::create_felt_sub(self.inner, *lhs, *rhs) } }
+        FeltValue::from(unsafe { llzk_bridge::create_felt_sub(self.inner, lhs.into(), rhs.into()) })
     }
 
     /// Generates an mul operation between two felts.
     pub fn felt_mul(&self, lhs: FeltValue, rhs: FeltValue) -> FeltValue {
         self.assert_has_struct("Cannot create op without a target struct");
-        FeltValue { inner: unsafe { llzk_bridge::create_felt_mul(self.inner, *lhs, *rhs) } }
+        FeltValue::from(unsafe { llzk_bridge::create_felt_mul(self.inner, lhs.into(), rhs.into()) })
     }
 
     /// Generates an neg operation over a felt.
     pub fn felt_neg(&self, value: FeltValue) -> FeltValue {
         self.assert_has_struct("Cannot create op without a target struct");
-        FeltValue { inner: unsafe { llzk_bridge::create_felt_neg(self.inner, *value) } }
+        FeltValue::from(unsafe { llzk_bridge::create_felt_neg(self.inner, value.into()) })
     }
 
     /// Given a slice moves its memory to a location linked to the lifetime of Codegen

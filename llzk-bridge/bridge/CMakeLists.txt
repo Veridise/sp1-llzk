@@ -6,11 +6,16 @@ project(LLZKRustBridge)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-add_library(llzkbridge)
+include(GNUInstallDirs)
+set(LLZK_BRIDGE_EXPORT_TARGETS "LlzkBridgeTargets")
+include(Dependencies.cmake)
+llzkbridge_setup_dependencies(${LLZK_BRIDGE_EXPORT_TARGETS})
 
+add_library(llzkbridge)
 target_include_directories(llzkbridge 
-  PRIVATE 
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+  PUBLIC 
+  ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(llzkbridge INTERFACE LLVMHeaders MLIRHeaders)
 
 add_subdirectory(lib)
 

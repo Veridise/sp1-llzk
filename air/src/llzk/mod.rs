@@ -47,6 +47,9 @@ pub type ExtFelt = field::ExtFelt;
 const EXT_FELT_DEGREE: usize = field::EXT_FELT_DEGREE;
 const FIELD_BETA: usize = field::FIELD_BETA;
 
+/// Opaque type that represents a IR type in llzk.
+pub type Type = llzk_bridge::ValueType;
+
 pub enum OutputFormats {
     Assembly,
     Bytecode,
@@ -103,6 +106,8 @@ pub struct CodegenChipVars {
     pub public_values: Vec<FeltVar>,
 }
 
+pub(crate) const PERM_CHALLENGES_COUNT: usize = 2;
+
 impl<'a> CodegenChipVars {
     /// Initializes the variables used for code generation given a chip and the number of values in
     /// the chip's width that are considered inputs.
@@ -132,7 +137,10 @@ impl<'a> CodegenChipVars {
                 Args::PermutationsNext,
                 codegen,
             ),
-            perm_challenges: init_vars(2, extfelt_arg(codegen, Args::PermutationChallenges)),
+            perm_challenges: init_vars(
+                PERM_CHALLENGES_COUNT,
+                extfelt_arg(codegen, Args::PermutationChallenges),
+            ),
             local_cumulative_sum: ExtFeltVar::Arg {
                 arg: codegen.get_func_arg(Args::LocalCumulativeSum).into(),
             },
@@ -196,62 +204,10 @@ impl<'a> AirBuilder for CodegenBuilder<'a> {
         let x: Self::Expr = x.into();
         let zero: Self::Expr = Felt::zero().into();
         let codegen = Codegen::instance();
-        codegen.emit_eq(*x, *zero);
+        codegen.emit_eq(x.into(), zero.into());
     }
 }
-/*
 
-Implementing this trait doesn't work this way so it's commented out for now.
-
-impl WordAirBuilder for CodegenBuilder<'_> {
-    fn slice_range_check_u8(
-        &mut self,
-        input: &[impl Into<Self::Expr> + Clone],
-        mult: impl Into<Self::Expr> + Clone,
-    ) {
-        // Generate range check constraints with LLZK here
-        // Check that number is 8 bit long
-        let mut index = 0;
-        while index + 1 < input.len() {
-            self.send_byte(
-                Self::Expr::from_canonical_u8(sp1_core_executor::ByteOpcode::U8Range as u8),
-                Self::Expr::zero(),
-                input[index].clone(),
-                input[index + 1].clone(),
-                mult.clone(),
-            );
-            index += 2;
-        }
-        if index < input.len() {
-            self.send_byte(
-                Self::Expr::from_canonical_u8(sp1_core_executor::ByteOpcode::U8Range as u8),
-                Self::Expr::zero(),
-                input[index].clone(),
-                Self::Expr::zero(),
-                mult.clone(),
-            );
-        }
-    }
-
-    fn slice_range_check_u16(
-        &mut self,
-        input: &[impl Into<Self::Expr> + Copy],
-        mult: impl Into<Self::Expr> + Clone,
-    ) {
-        // Generate range check constraints with LLZK here
-        // Check that number is 16 bit long
-        input.iter().for_each(|limb| {
-            self.send_byte(
-                Self::Expr::from_canonical_u8(sp1_core_executor::ByteOpcode::U16Range as u8),
-                *limb,
-                Self::Expr::zero(),
-                Self::Expr::zero(),
-                mult.clone(),
-            );
-        });
-    }
-}
-*/
 impl ExtensionBuilder for CodegenBuilder<'_> {
     type EF = ExtFelt;
     type ExprEF = ExtFeltValue;
@@ -264,7 +220,7 @@ impl ExtensionBuilder for CodegenBuilder<'_> {
         let x: ExtFeltValue = x.into();
         let zero: ExtFeltValue = ExtFelt::zero().into();
         let codegen = Codegen::instance();
-        codegen.emit_eq(*x, *zero);
+        codegen.emit_eq(x.into(), zero.into());
     }
 }
 

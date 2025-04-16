@@ -256,7 +256,7 @@ where
     A: for<'a> Air<llzk::CodegenBuilder<'a>> + MachineAir<F>,
 {
     let binding = llzk::Codegen::instance();
-    let codegen = binding.initialize(&chip);
+    let codegen = binding.initialize(&chip, n_inputs);
 
     let vars = llzk::CodegenChipVars::from_chip::<A>(chip, n_inputs, &codegen);
     let mut builder = llzk::CodegenBuilder::new(&vars);

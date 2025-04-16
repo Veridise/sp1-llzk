@@ -2,17 +2,18 @@
 #define _SYMBOL_H
 
 #include "CodegenState.h"
+#include <mlir-c/Support.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-// TODO: Use MLIR-C's FlatSymbolRef to represent this
-typedef struct Symbol {
-  unsigned dummy;
-} Symbol;
+typedef MlirStringRef Symbol;
 
-Symbol create_symbol(CodegenState *, unsigned char *, unsigned long);
+/// Creates a StringAttr with the contents of the given string. Returns a
+/// StringRef pointing to the content of the StringAttr.
+Symbol create_symbol(CodegenState *, const char *, size_t);
 
 #ifdef __cplusplus
 }
