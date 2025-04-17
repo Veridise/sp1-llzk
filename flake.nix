@@ -21,7 +21,7 @@
   outputs = { self, nixpkgs, flake-utils, llzk-pkgs, llzk }:
     {
       overlays.default = final: prev: {
-        sp1-llzk = final.callPackage ./. { llzk = final.llzk; };
+        sp1-llzk = final.callPackage ./. { clang = final.clang_18; llzk = final.llzk; };
       };
     }//
     (flake-utils.lib.eachDefaultSystem (system:

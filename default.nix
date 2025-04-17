@@ -5,8 +5,11 @@
   # dependencies
   mlir, llzk,
   cmake, cargo, llvmPackages_18,
-  ncurses, xml2
+  ncurses, libxml2, clang
 }:
+let 
+  llvm = llvmPackages_18;
+in
 rustPlatform.buildRustPackage rec {
   pname = "sp1-llzk";
   version = "0.1.0";
@@ -15,12 +18,29 @@ rustPlatform.buildRustPackage rec {
   cargoLock = {
     lockFile = ./Cargo.lock;
   };
-  nativeBuildInputs = [ cmake cargo clang llvmPackages_18.llvm mlir.dev xml2 ];
-  buildInputs = [ llzk mlir.dev ncurses xml2 llvmPackages_18.libllvm.dev ];
+  nativeBuildInputs = [ 
+    cmake 
+    cargo 
+    clang 
+    llvm.llvm 
+    llzk 
+    llvm.libllvm 
+    mlir.dev 
+    libxml2 
+  ];
+  buildInputs = [ 
+    llzk 
+    mlir.dev 
+    ncurses 
+    libxml2 
+    llvm.llvm
+    llvm.libclang
+  ];
 
   #LIBCLANG_PATH = "${pkgs.llvmPackages.libclang}/lib";
   MLIR_PATH = "${mlir.lib}/lib";
   LLZK_PATH = "${llzk}/lib";
+  MLIR_SYS_180_PREFIX = "${llvm.llvm.dev}";
 
   preBuild = ''
     # From: https://github.com/NixOS/nixpkgs/blob/1fab95f5190d087e66a3502481e34e15d62090aa/pkgs/applications/networking/browsers/firefox/common.nix#L247-L253
@@ -32,6 +52,8 @@ rustPlatform.buildRustPackage rec {
       $(< ${stdenv.cc}/nix-support/libc-cflags) \
       $(< ${stdenv.cc}/nix-support/cc-cflags) \
       $(< ${stdenv.cc}/nix-support/libcxx-cxxflags) \
+      -I${llvm.llvm.dev}/include \
+      -I${mlir.dev}/include \
       ${lib.optionalString stdenv.cc.isClang "-idirafter ${stdenv.cc.cc}/lib/clang/${lib.getVersion stdenv.cc.cc}/include"} \
       ${lib.optionalString stdenv.cc.isGNU "-isystem ${stdenv.cc.cc}/include/c++/${lib.getVersion stdenv.cc.cc} -isystem ${stdenv.cc.cc}/include/c++/${lib.getVersion stdenv.cc.cc}/${stdenv.hostPlatform.config} -idirafter ${stdenv.cc.cc}/lib/gcc/${stdenv.hostPlatform.config}/${lib.getVersion stdenv.cc.cc}/include"} \
     "
@@ -56,5 +78,5 @@ rustPlatform.buildRustPackage rec {
   '';
 
   doCheck = false;
-};
+}
 

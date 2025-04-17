@@ -11,11 +11,19 @@ set(LLZK_BRIDGE_EXPORT_TARGETS "LlzkBridgeTargets")
 include(Dependencies.cmake)
 llzkbridge_setup_dependencies(${LLZK_BRIDGE_EXPORT_TARGETS})
 
-add_library(llzkbridge)
+add_library(llzkbridge STATIC)
 target_include_directories(llzkbridge 
   PUBLIC 
   ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(llzkbridge INTERFACE LLVMHeaders MLIRHeaders)
+target_link_libraries(llzkbridge PRIVATE 
+  LLZK::LLZKDialectHeaders 
+  MLIRSupport 
+  LLZK::LLZKDialect 
+  MLIRIR 
+  MLIRDebug
+  LLVMSupport
+)
 
 add_subdirectory(lib)
 

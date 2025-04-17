@@ -27,10 +27,11 @@ fn link_mlir() -> Result<(), Box<dyn Error>> {
         .into());
     }
 
+    let llvm_libdir = llvm_config("--libdir")?;
     println!("cargo:rerun-if-changed=wrapper.h");
-    println!("cargo:rustc-link-search={}", llvm_config("--libdir")?);
+    println!("cargo:rustc-link-search={}", llvm_libdir);
 
-    for entry in read_dir(llvm_config("--libdir")?)? {
+    for entry in read_dir(llvm_libdir)? {
         if let Some(name) = entry?.path().file_name().and_then(OsStr::to_str) {
             if name.starts_with("libMLIR") {
                 if let Some(name) = parse_archive_name(name) {
@@ -98,14 +99,17 @@ fn get_system_libcpp() -> Option<&'static str> {
     }
 }
 
-fn llvm_config(argument: &str) -> Result<String, Box<dyn Error>> {
+fn llvm_config_path() -> PathBuf {
     let prefix = env::var(format!("MLIR_SYS_{LLVM_MAJOR_VERSION}0_PREFIX"))
         .map(|path| Path::new(&path).join("bin"))
         .unwrap_or_default();
     let llvm_config_exe =
         if cfg!(target_os = "windows") { "llvm-config.exe" } else { "llvm-config" };
+    prefix.join(llvm_config_exe)
+}
 
-    let call = format!("{} --link-static {argument}", prefix.join(llvm_config_exe).display(),);
+fn llvm_config(argument: &str) -> Result<String, Box<dyn Error>> {
+    let call = format!("{} --link-static {argument}", llvm_config_path().display(),);
 
     Ok(str::from_utf8(
         &if cfg!(target_os = "windows") {
@@ -142,13 +146,46 @@ where
 }
 
 fn build_bridge(src: &str) {
-    let dst = Config::new(src).build();
+    let dst = Config::new(src).define("LLVM_DIR", llvm_config("--prefix").unwrap()).build();
 
     println!("cargo:rustc-link-search=native={}", dst.display());
     println!("cargo:rustc-link-lib=static={}", BRIDGE_LIB_NAME);
 }
 
+#[derive(PartialEq)]
+enum BuildMode {
+    Release,
+    Debug,
+}
+
+fn get_cargo_build_mode_str() -> &'static str {
+    if let Ok(_) = env::var("DEBUG") {
+        "DEBUG"
+    } else {
+        "RELEASE"
+    }
+}
+
+fn ensure_build_consistency() -> Result<(), Box<dyn Error>> {
+    let llvm_build_mode = match llvm_config("--build-mode")? {
+        mode if mode == "Release" => BuildMode::Release,
+        mode if mode == "Debug" => BuildMode::Debug,
+        _ => return Err("Unrecognized build mode".into()),
+    };
+    let cargo_build_mode =
+        if let Ok(_) = env::var("DEBUG") { BuildMode::Debug } else { BuildMode::Release };
+
+    if llvm_build_mode != cargo_build_mode {
+        panic!("Cargo is building in a different mode but using a distribution of LLVM with a different mode");
+    }
+    Ok(())
+}
+
 fn main() {
+    //if let Err(error) = ensure_build_consistency() {
+    //    eprintln!("{}", error);
+    //    exit(1);
+    //}
     if let Err(error) = link_mlir() {
         eprintln!("{}", error);
         exit(1);

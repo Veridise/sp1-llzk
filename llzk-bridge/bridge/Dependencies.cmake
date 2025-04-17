@@ -15,9 +15,9 @@ macro(llzkbridge_setup_dependencies LLZK_BRIDGE_EXPORT_TARGETS)
 
   # Dependency setup
 
-  message(DEBUG "${CMAKE_MODULE_PATH}")
+  message(STATUS "CMake module path: ${CMAKE_MODULE_PATH}")
 
-  find_package(LLVM 18.1 REQUIRED CONFIG)
+  # find_package(LLVM 18.1 REQUIRED CONFIG)
   message(STATUS "Using LLVM in: ${LLVM_DIR}")
   
   find_package(MLIR REQUIRED CONFIG)
@@ -31,13 +31,15 @@ macro(llzkbridge_setup_dependencies LLZK_BRIDGE_EXPORT_TARGETS)
   add_header_library(LLVMHeaders ${LLVM_INCLUDE_DIRS} ${LLZK_BRIDGE_EXPORT_TARGETS})
   add_header_library(MLIRHeaders ${MLIR_INCLUDE_DIRS} ${LLZK_BRIDGE_EXPORT_TARGETS})
 
+  message(STATUS "Using LLVM CMake dir in: ${LLVM_CMAKE_DIR}")
   list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
   list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")
   include(TableGen)
   include(AddLLVM)
   include(AddMLIR)
   include(HandleLLVMOptions)
-
+  find_library(LLVM_LOCATION LLVM)
+  message(STATUS "LLVM location: ${LLVM_LOCATION}")
   separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
   add_definitions(${LLVM_DEFINITIONS_LIST})
 endmacro()
