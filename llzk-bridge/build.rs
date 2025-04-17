@@ -40,7 +40,23 @@ fn link_mlir() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    println!("cargo:rustc-link-lib=MLIR");
+    let mlir_path = env::var("MLIR_PATH")?;
+    println!("cargo:rustc-link-search={}", mlir_path);
+    for entry in read_dir(mlir_path)? {
+        if let Some(name) = entry?.path().file_name().and_then(OsStr::to_str) {
+            if name.starts_with("libMLIR") {
+                if let Some(name) = parse_archive_name(name) {
+                    println!("cargo:rustc-link-lib=static={name}");
+                }
+            }
+        }
+    }
+
+    if let Ok(path) = env::var("LLZK_PATH") {
+        println!("cargo:rustc-link-search={}", path);
+    }
+    println!("cargo:rustc-link-lib=LLZKDialect");
+    println!("cargo:rustc-link-lib=LLZKDialectRegistration");
 
     for name in llvm_config("--libnames")?.trim().split(' ') {
         if let Some(name) = parse_archive_name(name) {
