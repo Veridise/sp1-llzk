@@ -386,8 +386,8 @@ mod tests {
 
         let chip = AddChip;
         let chip = Chip::new(chip);
-        let _ = codegen_llzk_eval(&chip, 8);
-
+        let output = codegen_llzk_eval(&chip, 8);
+        println!("produced IR: {output}");
         // for chip in chips {
         //     if chip.name() == "AddSub" {
         //         let (code, f_ctr, _, f_constants, ef_constants, picusextractor) = codegen_cuda_eval(chip);

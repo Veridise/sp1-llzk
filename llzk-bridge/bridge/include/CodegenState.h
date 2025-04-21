@@ -40,14 +40,15 @@ int has_struct(CodegenState *);
 
 /// Writes the IR generated for the current struct into the output buffer.
 /// The caller needs to free the pointer with `release_output_buffer()`.
-int commit_struct(CodegenState *, unsigned char **, int *, enum OutputFormat);
+int commit_struct(CodegenState *, unsigned char **, size_t *,
+                  enum OutputFormat);
 
 /// Releases the memory used to store the IR output.
-void release_output_buffer(CodegenState *, unsigned char **);
+void release_output_buffer(CodegenState *, unsigned char *);
 
-/// Creates a copy of a chunk of bytes and ties the copy to the lifetime of the
+/// Allocates a chunk of bytes and ties it to the lifetime of the
 /// state.
-void *manage_data_lifetime(CodegenState *, const void *, size_t);
+void *allocate_chunk(CodegenState *, size_t);
 
 #ifdef __cplusplus
 }

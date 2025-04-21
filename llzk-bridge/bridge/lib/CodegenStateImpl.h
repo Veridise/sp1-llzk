@@ -8,8 +8,6 @@
 
 namespace llzk {
 
-mlir::DialectRegistry dialects();
-
 struct CodegenStateImpl {
   static CodegenStateImpl &fromWrapper(CodegenState *);
 

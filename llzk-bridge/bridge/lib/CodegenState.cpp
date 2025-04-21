@@ -1,10 +1,14 @@
 #include "CodegenStateImpl.h"
+#include "GlobalsNames.h"
+#include "Utils.h"
 #include <CodegenState.h>
 #include <cassert>
 #include <llvm/Support/Debug.h>
+#include <llzk/Dialect/LLZK/IR/Attrs.h>
 #include <llzk/Dialect/LLZK/IR/Dialect.h>
 #include <llzk/Dialect/LLZK/IR/Ops.h>
 #include <llzk/Dialect/LLZK/IR/Types.h>
+#include <llzk/Dialect/LLZK/Util/AttributeHelper.h>
 #include <mlir/CAPI/Support.h>
 #include <string>
 
@@ -14,11 +18,15 @@ namespace llzk {
 
 static CodegenState sharedState = {.impl = nullptr};
 
+static mlir::DialectRegistry dialects() {
+  mlir::DialectRegistry registry;
+  registry.insert<llzk::LLZKDialect>();
+  return registry;
+}
+
 CodegenStateImpl::CodegenStateImpl()
     : registry{dialects()}, ctx{registry}, builder{&ctx}, allocator{} {
   ctx.loadAllAvailableDialects();
-  llvm::dbgs() << "Created a new codegen state\n";
-  dump();
 }
 
 CodegenStateImpl &CodegenStateImpl::fromWrapper(CodegenState *wrapper) {
@@ -41,12 +49,6 @@ void CodegenStateImpl::dump() {
   llvm::dbgs() << "\n";
 }
 
-mlir::DialectRegistry dialects() {
-  mlir::DialectRegistry registry;
-  registry.insert<llzk::LLZKDialect>();
-  return registry;
-}
-
 } // namespace llzk
 
 CodegenState *get_state() {
@@ -64,29 +66,35 @@ void release_state(CodegenState *state) {
 }
 
 static void reset_target(ModuleOp op, OpBuilder &builder) {
-  llvm::dbgs() << "reset_target()\n";
   mlir::MLIRContext *ctx = builder.getContext();
-  if (op) {
-    llvm::dbgs() << "erasing: " << op << "\n";
+  if (op)
     op.erase();
-  } else {
-    llvm::dbgs() << "no op to remove\n";
-  }
-  llvm::dbgs() << "creating a new builder\n";
   builder = OpBuilder(ctx);
-  llvm::dbgs() << "done resetting\n";
+}
+
+static void create_range_global(CodegenState *state, unsigned bitsize,
+                                mlir::StringRef name) {
+  auto &builder = unwrap(state).builder;
+  auto unk = builder.getUnknownLoc();
+  mlir::SmallVector<mlir::Attribute> felts;
+  felts.reserve(1 << bitsize);
+
+  for (unsigned val = 0; val < (1 << bitsize); val++) {
+    felts.push_back(
+        llzk::FeltConstAttr::get(builder.getContext(), llzk::toAPInt(val)));
+  }
+  builder.create<llzk::GlobalDefOp>(unk, name, true,
+                                    po2ArrayType(builder, bitsize),
+                                    builder.getArrayAttr(felts));
 }
 
 /// Initializes a struct that is going to be the target of the IR generation.
 void initialize_struct(CodegenState *state, StructSpec spec) {
-  llvm::dbgs() << "initialize_struct()\n";
   auto &builder = unwrap(state).builder;
   auto unk = builder.getUnknownLoc();
   // 1. Destroy the current module if any
-  llvm::dbgs() << "1. Destroy the current module if any\n";
   reset_target(unwrap(state).currentTarget, builder);
   // 2. Create the module
-  llvm::dbgs() << "2. Create the module\n";
   unwrap(state).currentTarget = builder.create<ModuleOp>(unk);
   unwrap(state).currentTarget->setAttr(
       llzk::LANG_ATTR_NAME,
@@ -94,18 +102,13 @@ void initialize_struct(CodegenState *state, StructSpec spec) {
   builder.setInsertionPointToStart(
       &unwrap(state).currentTarget.getBodyRegion().front());
   // 3. Create the support globals
-  // TODO
+  create_range_global(state, 8, llzk::NAME_8BITRANGE);
+  create_range_global(state, 16, llzk::NAME_16BITRANGE);
   // 4. Create the struct
-  llvm::dbgs() << "4. Create the struct\n";
-  llvm::dbgs() << "Before:\n";
-  unwrap(state).dump();
   auto newStruct = builder.create<llzk::StructDefOp>(
       unk, builder.getStringAttr(unwrap(spec.name)), builder.getArrayAttr({}));
-  llvm::dbgs() << "After:\n";
-  unwrap(state).dump();
   builder.setInsertionPointToStart(&newStruct.getBodyRegion().emplaceBlock());
   // 5. Create the output fields
-  llvm::dbgs() << "5. Create the output fields\n";
   Twine o("output");
   Twine on("output_next");
   auto felt = llzk::FeltType::get(&unwrap(state).ctx);
@@ -116,8 +119,6 @@ void initialize_struct(CodegenState *state, StructSpec spec) {
                                      felt);
   }
   // 6. Create the constrain function with the required arguments
-  llvm::dbgs()
-      << "6. Create the constrain function with the required arguments\n";
   auto selfType = newStruct.getType();
   auto extfelt = llzk::ArrayType::get(felt, {spec.extfelt_degree});
 #define FELT_ARR(n) llzk::ArrayType::get(felt, {static_cast<long long>(n)})
@@ -167,10 +168,7 @@ void initialize_struct(CodegenState *state, StructSpec spec) {
   block.addArguments(funcType.getInputs(), locs);
   // 7. Create an OpBuilder that points to the beginning of the constrain
   // function.
-  llvm::dbgs() << "7. Create an OpBuilder that points to the beginning of the "
-                  "constrain function\n";
   builder.setInsertionPointToStart(&func.getRegion().front());
-  unwrap(state).dump();
 }
 
 /// Returns 1 if the given codegen state has an initialized struct. 0 otherwise.
@@ -178,7 +176,7 @@ int has_struct(CodegenState *state) {
   return unwrap(state).currentTarget != nullptr;
 }
 
-static int dump_assembly(ModuleOp op, unsigned char **out, int *size) {
+static int dump_assembly(ModuleOp op, unsigned char **out, size_t *size) {
   if (!op)
     return 2;
   std::string s;
@@ -188,13 +186,13 @@ static int dump_assembly(ModuleOp op, unsigned char **out, int *size) {
   *out = reinterpret_cast<unsigned char *>(malloc(s.size()));
   if (!*out)
     return 2;
-  memcpy(s.data(), *out, s.size());
+  memcpy(*out, s.data(), s.size());
   return 0;
 }
 
 /// Writes the IR generated for the current struct into the output buffer.
 /// The caller needs to free the pointer with `release_output_buffer()`.
-int commit_struct(CodegenState *state, unsigned char **out, int *size,
+int commit_struct(CodegenState *state, unsigned char **out, size_t *size,
                   OutputFormat format) {
   if (!size)
     return 3;
@@ -218,11 +216,10 @@ int commit_struct(CodegenState *state, unsigned char **out, int *size,
 }
 
 /// Releases the memory used to store the IR output.
-void release_output_buffer(CodegenState *, unsigned char **buf) { free(buf); }
+void release_output_buffer(CodegenState *, unsigned char *buf) { free(buf); }
 
-void *manage_data_lifetime(CodegenState *state, const void *buf, size_t len) {
-  void *ptr = unwrap(state).allocator.Allocate(len, llvm::Align());
-  if (ptr)
-    memcpy(ptr, buf, len);
-  return ptr;
+/// Allocates a chunk of bytes and ties it to the lifetime of the
+/// state.
+void *allocate_chunk(CodegenState *state, size_t len) {
+  return unwrap(state).allocator.Allocate(len, llvm::Align());
 }

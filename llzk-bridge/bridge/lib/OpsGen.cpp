@@ -1,9 +1,12 @@
 #include "CodegenStateImpl.h"
+#include "GlobalsNames.h"
+#include "Utils.h"
 #include <OpsGen.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/SmallVectorExtras.h>
 #include <llzk/Dialect/LLZK/IR/Ops.h>
 #include <llzk/Dialect/LLZK/IR/Types.h>
+#include <llzk/Dialect/LLZK/Util/AttributeHelper.h>
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Support.h>
 #include <mlir/Dialect/Arith/IR/Arith.h>
@@ -100,6 +103,32 @@ void create_emit_eq(CodegenState *state, Value lhs, Value rhs) {
       unwrap(state).builder.getUnknownLoc(), unwrap(lhs), unwrap(rhs));
 }
 
+void create_emit_in(CodegenState *state, Value lhs, Value rhs) {
+  unwrap(state).builder.create<llzk::EmitContainmentOp>(
+      unwrap(state).builder.getUnknownLoc(), unwrap(lhs), unwrap(rhs));
+}
+
+static Value load_global(CodegenState *state, mlir::Type type,
+                         mlir::StringRef name) {
+  return wrap(unwrap(state)
+                  .builder
+                  .create<llzk::GlobalReadOp>(
+                      unwrap(state).builder.getUnknownLoc(), type,
+                      mlir::FlatSymbolRefAttr::get(
+                          unwrap(state).builder.getStringAttr(name)))
+                  .getResult());
+}
+
+Value get_8bit_range(CodegenState *state) {
+  return load_global(state, po2ArrayType(unwrap(state).builder, 8),
+                     llzk::NAME_8BITRANGE);
+}
+
+Value get_16bit_range(CodegenState *state) {
+  return load_global(state, po2ArrayType(unwrap(state).builder, 16),
+                     llzk::NAME_16BITRANGE);
+}
+
 template <typename Op>
 Value create_bin_op(CodegenState *state, Value lhs, Value rhs) {
   return wrap(unwrap(state)
@@ -127,4 +156,17 @@ Value create_felt_neg(CodegenState *state, Value val) {
                   .create<llzk::NegFeltOp>(
                       unwrap(state).builder.getUnknownLoc(), unwrap(val))
                   .getResult());
+}
+
+int value_is_constfelt(CodegenState *, Value value) {
+  if (!unwrap(value).getDefiningOp())
+    return false;
+  return mlir::isa<llzk::FeltConstantOp>(unwrap(value).getDefiningOp());
+}
+
+int64_t extract_constfelt(CodegenState *state, Value value) {
+  assert(unwrap(value).getDefiningOp());
+  auto constFeltOp =
+      mlir::cast<llzk::FeltConstantOp>(unwrap(value).getDefiningOp());
+  return llzk::fromAPInt(constFeltOp.getValue().getValue());
 }

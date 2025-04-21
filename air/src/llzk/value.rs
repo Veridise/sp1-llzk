@@ -111,8 +111,6 @@ impl From<Felt> for FeltValue {
 
 impl From<Value> for FeltValue {
     fn from(value: Value) -> Self {
-        // TODO: Change this to TryFrom and check that the value is of the expected type.
-        // Alternatively auto convert types or just generate malformed IR and complain later.
         Self { inner: value }
     }
 }
@@ -541,11 +539,12 @@ impl AbstractExtensionField<FeltValue> for ExtFeltValue {
 
     fn as_base_slice(&self) -> &[FeltValue] {
         let codegen = Codegen::instance();
-        let arr: [FeltValue; <Self as AbstractExtensionField<FeltValue>>::D] =
-            core::array::from_fn(|i: usize| {
-                let index = codegen.const_index(i);
-                codegen.read_array((*self).into(), index).into()
-            });
-        codegen.manage(&arr)
+        let deg = <Self as AbstractExtensionField<FeltValue>>::D;
+        let mut values = codegen.allocate::<FeltValue>(deg);
+        for i in 0..deg {
+            let index = codegen.const_index(i);
+            values[i] = codegen.read_array((*self).into(), index).into();
+        }
+        values
     }
 }

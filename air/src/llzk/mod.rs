@@ -4,6 +4,8 @@ mod helpers;
 mod value;
 mod vars;
 
+use core::fmt;
+
 use babybear as field;
 pub use codegen::Codegen;
 use codegen::CodegenWithStruct;
@@ -25,6 +27,7 @@ use p3_air::PermutationAirBuilder;
 use p3_field::AbstractField;
 use p3_matrix::dense::RowMajorMatrixView;
 use p3_matrix::stack::VerticalPair;
+use sp1_core_executor::ByteOpcode;
 use sp1_core_machine::air::WordAirBuilder;
 use sp1_stark::air::AirInteraction;
 use sp1_stark::air::BaseAirBuilder;
@@ -59,7 +62,7 @@ pub enum OutputFormats {
 /// Final output type of the llzk code generator.
 pub struct CodegenOutput {
     bytes: *mut u8,
-    size: i32,
+    size: usize,
     format: OutputFormats,
 }
 
@@ -67,6 +70,14 @@ impl Drop for CodegenOutput {
     fn drop(&mut self) {
         let codegen = Codegen::instance();
         codegen.release_output(self);
+    }
+}
+
+impl fmt::Display for CodegenOutput {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let str = std::str::from_utf8(unsafe { std::slice::from_raw_parts(self.bytes, self.size) })
+            .unwrap();
+        write!(f, "{}", str)
     }
 }
 
@@ -269,7 +280,30 @@ impl MessageBuilder<AirInteraction<FeltValue>> for CodegenBuilder<'_> {
         message: AirInteraction<FeltValue>,
         scope: sp1_stark::air::InteractionScope,
     ) {
-        todo!()
+        match message.kind {
+            sp1_stark::InteractionKind::Byte => {
+                if (message.values.len() < 4) {
+                    panic!("Expected to have at least 4 inputs");
+                }
+
+                let codegen = Codegen::instance();
+                if let Some(opcode) = codegen.get_const_felt_from_value(message.values[0].into()) {
+                    let u8opc: Felt = Felt::from_canonical_u8(ByteOpcode::U8Range as u8);
+                    let u16opc: Felt = Felt::from_canonical_u8(ByteOpcode::U16Range as u8);
+                    if let Some(range) = match opcode {
+                        u8opc => Some(codegen.get_8bit_range()),
+                        u16opc => Some(codegen.get_16bit_range()),
+                        _ => None,
+                    } {
+                        let value1 = message.values[2];
+                        codegen.emit_in(value1.into(), range);
+                        let value2 = message.values[3];
+                        codegen.emit_in(value2.into(), range);
+                    }
+                }
+            }
+            _ => {}
+        }
     }
 
     fn receive(
@@ -277,6 +311,6 @@ impl MessageBuilder<AirInteraction<FeltValue>> for CodegenBuilder<'_> {
         message: AirInteraction<FeltValue>,
         scope: sp1_stark::air::InteractionScope,
     ) {
-        todo!()
+        unreachable!()
     }
 }
