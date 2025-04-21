@@ -22,9 +22,7 @@ rustPlatform.buildRustPackage rec {
     cmake 
     cargo 
     clang 
-    llvm.llvm 
     llzk 
-    llvm.libllvm 
     mlir.dev 
     libxml2 
   ];
@@ -33,14 +31,11 @@ rustPlatform.buildRustPackage rec {
     mlir.dev 
     ncurses 
     libxml2 
-    llvm.llvm
-    llvm.libclang
   ];
 
   #LIBCLANG_PATH = "${pkgs.llvmPackages.libclang}/lib";
-  MLIR_PATH = "${mlir.lib}/lib";
-  LLZK_PATH = "${llzk}/lib";
-  MLIR_SYS_180_PREFIX = "${llvm.llvm.dev}";
+  MLIR_DIR = "${mlir.lib}";
+  LLZK_LIB_PATH = "${llzk}/lib";
 
   preBuild = ''
     # From: https://github.com/NixOS/nixpkgs/blob/1fab95f5190d087e66a3502481e34e15d62090aa/pkgs/applications/networking/browsers/firefox/common.nix#L247-L253

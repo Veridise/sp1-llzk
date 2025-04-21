@@ -15,6 +15,7 @@
     llzk = {
       url = "git+ssh://git@github.com/Veridise/llzk-lib.git?ref=main";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.llzk-pkgs.follows = "llzk-pkgs";
     };
   };
 
@@ -46,7 +47,6 @@
               rustfmt 
               rustPackages.clippy 
             ]);
-            #RUST_SRC_PATH = rustPlatform.rustLibSrc;
           });
         };
       }

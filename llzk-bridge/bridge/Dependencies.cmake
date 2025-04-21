@@ -20,7 +20,7 @@ macro(llzkbridge_setup_dependencies LLZK_BRIDGE_EXPORT_TARGETS)
   # find_package(LLVM 18.1 REQUIRED CONFIG)
   message(STATUS "Using LLVM in: ${LLVM_DIR}")
   
-  find_package(MLIR REQUIRED CONFIG)
+  # find_package(MLIR REQUIRED CONFIG)
   message(STATUS "Using MLIR in: ${MLIR_DIR}")
   
   find_package(LLZK REQUIRED CONFIG)

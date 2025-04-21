@@ -41,8 +41,9 @@ fn link_mlir() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    let mlir_path = env::var("MLIR_PATH")?;
-    println!("cargo:rustc-link-search={}", mlir_path);
+    let mlir_dir = env::var("MLIR_DIR")?;
+    let mlir_path = PathBuf::from(mlir_dir).join("lib");
+    println!("cargo:rustc-link-search={}", mlir_path.display());
     for entry in read_dir(mlir_path)? {
         if let Some(name) = entry?.path().file_name().and_then(OsStr::to_str) {
             if name.starts_with("libMLIR") {
@@ -53,7 +54,7 @@ fn link_mlir() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    if let Ok(path) = env::var("LLZK_PATH") {
+    if let Ok(path) = env::var("LLZK_LIB_PATH") {
         println!("cargo:rustc-link-search={}", path);
     }
     println!("cargo:rustc-link-lib=LLZKDialect");
@@ -146,7 +147,10 @@ where
 }
 
 fn build_bridge(src: &str) {
-    let dst = Config::new(src).define("LLVM_DIR", llvm_config("--prefix").unwrap()).build();
+    let dst = Config::new(src)
+        .define("LLVM_DIR", llvm_config("--prefix").unwrap())
+        .define("MLIR_DIR", env::var("MLIR_DIR").unwrap())
+        .build();
 
     println!("cargo:rustc-link-search=native={}", dst.display());
     println!("cargo:rustc-link-lib=static={}", BRIDGE_LIB_NAME);
