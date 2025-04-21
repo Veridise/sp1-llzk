@@ -8,15 +8,20 @@
 
 namespace llzk {
 
+mlir::DialectRegistry dialects();
+
 struct CodegenStateImpl {
   static CodegenStateImpl &fromWrapper(CodegenState *);
 
-  CodegenStateImpl() : ctx{}, builder{&ctx}, allocator{} {}
+  CodegenStateImpl();
 
+  mlir::DialectRegistry registry;
   mlir::MLIRContext ctx;
   mlir::ModuleOp currentTarget = nullptr;
   mlir::OpBuilder builder;
   llvm::BumpPtrAllocator allocator;
+
+  void dump();
 };
 
 } // namespace llzk

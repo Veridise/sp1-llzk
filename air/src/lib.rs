@@ -384,11 +384,8 @@ mod tests {
     pub fn test_add_llzk() {
         setup_logger();
 
-        let config = BabyBearPoseidon2::default();
-        let machine = RiscvAir::machine(config);
-        let chips = machine.chips();
-        let mut chip = AddChip;
-        let mut chip = Chip::new(chip);
+        let chip = AddChip;
+        let chip = Chip::new(chip);
         let _ = codegen_llzk_eval(&chip, 8);
 
         // for chip in chips {

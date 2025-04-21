@@ -1,6 +1,8 @@
 #include "CodegenStateImpl.h"
 #include <CodegenState.h>
 #include <cassert>
+#include <llvm/Support/Debug.h>
+#include <llzk/Dialect/LLZK/IR/Dialect.h>
 #include <llzk/Dialect/LLZK/IR/Ops.h>
 #include <llzk/Dialect/LLZK/IR/Types.h>
 #include <mlir/CAPI/Support.h>
@@ -12,10 +14,37 @@ namespace llzk {
 
 static CodegenState sharedState = {.impl = nullptr};
 
+CodegenStateImpl::CodegenStateImpl()
+    : registry{dialects()}, ctx{registry}, builder{&ctx}, allocator{} {
+  ctx.loadAllAvailableDialects();
+  llvm::dbgs() << "Created a new codegen state\n";
+  dump();
+}
+
 CodegenStateImpl &CodegenStateImpl::fromWrapper(CodegenState *wrapper) {
   assert(wrapper);
   assert(wrapper->impl);
   return *reinterpret_cast<CodegenStateImpl *>(wrapper->impl);
+}
+
+void CodegenStateImpl::dump() {
+  llvm::interleave(registry.getDialectNames(),
+                   llvm::dbgs() << "Loaded dialects:\n- ", "\n- ");
+  llvm::dbgs() << "\n";
+
+  llvm::dbgs() << "Current op: ";
+  if (currentTarget) {
+    currentTarget.dump();
+  } else {
+    llvm::dbgs() << "<<NULL>>";
+  }
+  llvm::dbgs() << "\n";
+}
+
+mlir::DialectRegistry dialects() {
+  mlir::DialectRegistry registry;
+  registry.insert<llzk::LLZKDialect>();
+  return registry;
 }
 
 } // namespace llzk
@@ -35,29 +64,48 @@ void release_state(CodegenState *state) {
 }
 
 static void reset_target(ModuleOp op, OpBuilder &builder) {
-  auto ctx = op.getContext();
-  if (op)
+  llvm::dbgs() << "reset_target()\n";
+  mlir::MLIRContext *ctx = builder.getContext();
+  if (op) {
+    llvm::dbgs() << "erasing: " << op << "\n";
     op.erase();
+  } else {
+    llvm::dbgs() << "no op to remove\n";
+  }
+  llvm::dbgs() << "creating a new builder\n";
   builder = OpBuilder(ctx);
+  llvm::dbgs() << "done resetting\n";
 }
 
 /// Initializes a struct that is going to be the target of the IR generation.
 void initialize_struct(CodegenState *state, StructSpec spec) {
+  llvm::dbgs() << "initialize_struct()\n";
   auto &builder = unwrap(state).builder;
   auto unk = builder.getUnknownLoc();
   // 1. Destroy the current module if any
+  llvm::dbgs() << "1. Destroy the current module if any\n";
   reset_target(unwrap(state).currentTarget, builder);
   // 2. Create the module
+  llvm::dbgs() << "2. Create the module\n";
   unwrap(state).currentTarget = builder.create<ModuleOp>(unk);
+  unwrap(state).currentTarget->setAttr(
+      llzk::LANG_ATTR_NAME,
+      builder.getStringAttr(llzk::LLZKDialect::getDialectNamespace()));
   builder.setInsertionPointToStart(
       &unwrap(state).currentTarget.getBodyRegion().front());
   // 3. Create the support globals
   // TODO
   // 4. Create the struct
+  llvm::dbgs() << "4. Create the struct\n";
+  llvm::dbgs() << "Before:\n";
+  unwrap(state).dump();
   auto newStruct = builder.create<llzk::StructDefOp>(
       unk, builder.getStringAttr(unwrap(spec.name)), builder.getArrayAttr({}));
-  builder.setInsertionPointToStart(&newStruct.getBodyRegion().front());
+  llvm::dbgs() << "After:\n";
+  unwrap(state).dump();
+  builder.setInsertionPointToStart(&newStruct.getBodyRegion().emplaceBlock());
   // 5. Create the output fields
+  llvm::dbgs() << "5. Create the output fields\n";
   Twine o("output");
   Twine on("output_next");
   auto felt = llzk::FeltType::get(&unwrap(state).ctx);
@@ -68,6 +116,8 @@ void initialize_struct(CodegenState *state, StructSpec spec) {
                                      felt);
   }
   // 6. Create the constrain function with the required arguments
+  llvm::dbgs()
+      << "6. Create the constrain function with the required arguments\n";
   auto selfType = newStruct.getType();
   auto extfelt = llzk::ArrayType::get(felt, {spec.extfelt_degree});
 #define FELT_ARR(n) llzk::ArrayType::get(felt, {static_cast<long long>(n)})
@@ -112,9 +162,15 @@ void initialize_struct(CodegenState *state, StructSpec spec) {
 
   auto func = builder.create<llzk::FuncOp>(
       unk, builder.getStringAttr("constrain"), funcType);
+  auto &block = func.getRegion().emplaceBlock();
+  mlir::SmallVector<Location> locs(funcType.getInputs().size(), unk);
+  block.addArguments(funcType.getInputs(), locs);
   // 7. Create an OpBuilder that points to the beginning of the constrain
   // function.
+  llvm::dbgs() << "7. Create an OpBuilder that points to the beginning of the "
+                  "constrain function\n";
   builder.setInsertionPointToStart(&func.getRegion().front());
+  unwrap(state).dump();
 }
 
 /// Returns 1 if the given codegen state has an initialized struct. 0 otherwise.

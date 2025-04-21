@@ -26,10 +26,11 @@ use p3_field::AbstractField;
 use p3_matrix::dense::RowMajorMatrixView;
 use p3_matrix::stack::VerticalPair;
 use sp1_core_machine::air::WordAirBuilder;
+use sp1_stark::air::AirInteraction;
 use sp1_stark::air::BaseAirBuilder;
 use sp1_stark::air::ByteAirBuilder;
-use sp1_stark::air::EmptyMessageBuilder;
 use sp1_stark::air::MachineAir;
+use sp1_stark::air::MessageBuilder;
 use sp1_stark::air::MultiTableAirBuilder;
 use sp1_stark::septic_curve::SepticCurve;
 use sp1_stark::septic_digest::SepticDigest;
@@ -262,6 +263,20 @@ impl<'a> AirBuilderWithPublicValues for CodegenBuilder<'a> {
     }
 }
 
-// TODO: Implement here the range check thing by using a custom MessageBuilder instead of the empty
-// one.
-impl EmptyMessageBuilder for CodegenBuilder<'_> {}
+impl MessageBuilder<AirInteraction<FeltValue>> for CodegenBuilder<'_> {
+    fn send(
+        &mut self,
+        message: AirInteraction<FeltValue>,
+        scope: sp1_stark::air::InteractionScope,
+    ) {
+        todo!()
+    }
+
+    fn receive(
+        &mut self,
+        message: AirInteraction<FeltValue>,
+        scope: sp1_stark::air::InteractionScope,
+    ) {
+        todo!()
+    }
+}

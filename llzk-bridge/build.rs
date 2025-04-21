@@ -156,40 +156,7 @@ fn build_bridge(src: &str) {
     println!("cargo:rustc-link-lib=static={}", BRIDGE_LIB_NAME);
 }
 
-#[derive(PartialEq)]
-enum BuildMode {
-    Release,
-    Debug,
-}
-
-fn get_cargo_build_mode_str() -> &'static str {
-    if let Ok(_) = env::var("DEBUG") {
-        "DEBUG"
-    } else {
-        "RELEASE"
-    }
-}
-
-fn ensure_build_consistency() -> Result<(), Box<dyn Error>> {
-    let llvm_build_mode = match llvm_config("--build-mode")? {
-        mode if mode == "Release" => BuildMode::Release,
-        mode if mode == "Debug" => BuildMode::Debug,
-        _ => return Err("Unrecognized build mode".into()),
-    };
-    let cargo_build_mode =
-        if let Ok(_) = env::var("DEBUG") { BuildMode::Debug } else { BuildMode::Release };
-
-    if llvm_build_mode != cargo_build_mode {
-        panic!("Cargo is building in a different mode but using a distribution of LLVM with a different mode");
-    }
-    Ok(())
-}
-
 fn main() {
-    //if let Err(error) = ensure_build_consistency() {
-    //    eprintln!("{}", error);
-    //    exit(1);
-    //}
     if let Err(error) = link_mlir() {
         eprintln!("{}", error);
         exit(1);
