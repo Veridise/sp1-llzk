@@ -57,6 +57,7 @@ pub type Type = llzk_bridge::ValueType;
 pub enum OutputFormats {
     Assembly,
     Bytecode,
+    Picus,
 }
 
 /// Final output type of the llzk code generator.

@@ -94,7 +94,7 @@ impl Codegen {
         let mut output = CodegenOutput {
             bytes: std::ptr::null_mut(),
             size: 0,
-            format: super::OutputFormats::Assembly, // Only assembly IR for now.
+            format: super::OutputFormats::Picus, // Picus for testing.
         };
         if unsafe { llzk_bridge::has_struct(self.inner) } != 0 {
             let res = unsafe {
@@ -102,7 +102,7 @@ impl Codegen {
                     self.inner,
                     &mut output.bytes,
                     &mut output.size,
-                    llzk_bridge::OutputFormat_OF_Assembly,
+                    llzk_bridge::OutputFormat_OF_Picus,
                 )
             };
             if res > 0 {

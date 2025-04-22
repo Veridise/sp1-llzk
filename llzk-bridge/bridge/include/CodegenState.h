@@ -22,7 +22,7 @@ typedef struct StructSpec {
 } StructSpec;
 
 /// Final output format of the IR.
-enum OutputFormat { OF_Assembly, OF_Bytecode };
+enum OutputFormat { OF_Assembly, OF_Bytecode, OF_Picus };
 
 /// Returns the current codegen inner state. The first time this function
 /// is called or the first time after calling `release_state` it will initialize

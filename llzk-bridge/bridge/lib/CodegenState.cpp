@@ -9,6 +9,7 @@
 #include <llzk/Dialect/LLZK/IR/Ops.h>
 #include <llzk/Dialect/LLZK/IR/Types.h>
 #include <llzk/Dialect/LLZK/Util/AttributeHelper.h>
+#include <llzk/Target/Picus/Export.h>
 #include <mlir/CAPI/Support.h>
 #include <string>
 
@@ -176,7 +177,8 @@ int has_struct(CodegenState *state) {
   return unwrap(state).currentTarget != nullptr;
 }
 
-static int dump_assembly(ModuleOp op, unsigned char **out, size_t *size) {
+template <typename T>
+static int dump_assembly(T op, unsigned char **out, size_t *size) {
   if (!op)
     return 2;
   std::string s;
@@ -203,6 +205,17 @@ int commit_struct(CodegenState *state, unsigned char **out, size_t *size,
   switch (format) {
   case OF_Assembly:
     res = dump_assembly(unwrap(state).currentTarget, out, size);
+    if (res != 0)
+      return res;
+    reset_target(unwrap(state).currentTarget, unwrap(state).builder);
+    break;
+  case OF_Picus:
+    auto picusCircuit = translateModuleToPicus(unwrap(state).currentTarget);
+    if (!picusCircuit) {
+      return 4;
+    }
+    res = dump_assembly(*picusCircuit, out, size);
+
     if (res != 0)
       return res;
     reset_target(unwrap(state).currentTarget, unwrap(state).builder);

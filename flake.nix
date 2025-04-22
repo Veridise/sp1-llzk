@@ -13,7 +13,7 @@
     };
 
     llzk = {
-      url = "git+ssh://git@github.com/Veridise/llzk-lib.git?ref=main";
+      url = "git+ssh://git@github.com/Veridise/llzk-lib.git?ref=dani/LLZK-253-LLZK-to-Picus-translation";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.llzk-pkgs.follows = "llzk-pkgs";
     };
