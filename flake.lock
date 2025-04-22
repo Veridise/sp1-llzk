@@ -31,16 +31,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1744815490,
-        "narHash": "sha256-aRMpP/e5DyHoQal/dpOSFhP6wIe5QaUE/VUlwebGMgA=",
-        "ref": "main",
-        "rev": "4697f78e5ab0733e65c71ea032ed65d441bdcdab",
-        "revCount": 170,
+        "lastModified": 1745360827,
+        "narHash": "sha256-yWj+fll43rWBkfqBlmwmVpqgjMkzbx670+v7mzU1q2E=",
+        "ref": "dani/LLZK-253-LLZK-to-Picus-translation",
+        "rev": "c8daa11397fcd2ec23a816e69aeca7bd25659f6a",
+        "revCount": 175,
         "type": "git",
         "url": "ssh://git@github.com/Veridise/llzk-lib.git"
       },
       "original": {
-        "ref": "main",
+        "ref": "dani/LLZK-253-LLZK-to-Picus-translation",
         "type": "git",
         "url": "ssh://git@github.com/Veridise/llzk-lib.git"
       }

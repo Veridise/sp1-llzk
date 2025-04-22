@@ -10,6 +10,7 @@
 #include <llzk/Dialect/LLZK/IR/Types.h>
 #include <llzk/Dialect/LLZK/Util/AttributeHelper.h>
 #include <llzk/Target/Picus/Export.h>
+#include <llzk/Target/Picus/Language/Circuit.h>
 #include <mlir/CAPI/Support.h>
 #include <string>
 
