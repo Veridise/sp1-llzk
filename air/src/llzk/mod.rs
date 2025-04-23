@@ -50,6 +50,7 @@ pub type Felt = field::Felt;
 pub type ExtFelt = field::ExtFelt;
 const EXT_FELT_DEGREE: usize = field::EXT_FELT_DEGREE;
 const FIELD_BETA: usize = field::FIELD_BETA;
+const P: usize = field::P;
 
 /// Opaque type that represents a IR type in llzk.
 pub type Type = llzk_bridge::ValueType;
@@ -92,7 +93,7 @@ pub type Symbol = llzk_bridge::Symbol;
 pub enum Args {
     SelfArg = 0,
     Inputs,
-    InputsNext,
+    //InputsNext,
     Preprocessed,
     PreprocessedNext,
     //Permutations,
@@ -143,7 +144,7 @@ impl<'a> CodegenChipVars {
             main: air_values(
                 chip.width(),
                 main_vars(codegen, Args::Inputs, n_inputs, "output"),
-                main_vars(codegen, Args::InputsNext, n_inputs, "output_next"),
+                |_| FeltVar::Ignore,
             ),
             perm: AirOpenedValues {
                 local: (0..chip.permutation_width()).map(|_| ExtFeltVar {}).collect::<Vec<_>>(),
@@ -299,23 +300,28 @@ impl MessageBuilder<AirInteraction<FeltValue>> for CodegenBuilder<'_> {
     ) {
         match message.kind {
             sp1_stark::InteractionKind::Byte => {
-                if (message.values.len() < 4) {
-                    panic!("Expected to have at least 4 inputs");
+                if (message.values.len() < 5) {
+                    panic!("Expected to have at least 5 inputs");
                 }
 
                 let codegen = Codegen::instance();
                 if let Some(opcode) = codegen.get_const_felt_from_value(message.values[0].into()) {
                     let u8opc: Felt = Felt::from_canonical_u8(ByteOpcode::U8Range as u8);
                     let u16opc: Felt = Felt::from_canonical_u8(ByteOpcode::U16Range as u8);
-                    if let Some(range) = match opcode {
-                        u8opc => Some(codegen.get_8bit_range()),
-                        u16opc => Some(codegen.get_16bit_range()),
-                        _ => None,
+                    if let Some(range) = if opcode == u8opc {
+                        Some(codegen.get_8bit_range())
+                    } else if opcode == u16opc {
+                        Some(codegen.get_16bit_range())
+                    } else {
+                        None
                     } {
-                        let value1 = message.values[2];
-                        codegen.emit_in(value1.into(), range);
-                        let value2 = message.values[3];
-                        codegen.emit_in(value2.into(), range);
+                        for value in message.values.into_iter().skip(1) {
+                            if codegen.get_const_felt_from_value(value.into()) == Some(Felt::zero())
+                            {
+                                continue;
+                            }
+                            codegen.emit_in(value.into(), range);
+                        }
                     }
                 }
             }

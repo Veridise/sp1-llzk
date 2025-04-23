@@ -24,6 +24,23 @@ typedef struct StructSpec {
 /// Final output format of the IR.
 enum OutputFormat { OF_Assembly, OF_Bytecode, OF_Picus };
 
+typedef struct AssemblyFormatData {
+} AssemblyFormatData;
+
+typedef struct BytecodeFormatData {
+} BytecodeFormatData;
+
+typedef struct PicusFormatData {
+  size_t prime;
+} PicusFormatData;
+
+/// Additional data required by the selected output format.
+typedef union {
+  AssemblyFormatData Assembly;
+  BytecodeFormatData Bytecode;
+  PicusFormatData Picus;
+} FormatData;
+
 /// Returns the current codegen inner state. The first time this function
 /// is called or the first time after calling `release_state` it will initialize
 /// it automatically.
@@ -40,8 +57,8 @@ int has_struct(CodegenState *);
 
 /// Writes the IR generated for the current struct into the output buffer.
 /// The caller needs to free the pointer with `release_output_buffer()`.
-int commit_struct(CodegenState *, unsigned char **, size_t *,
-                  enum OutputFormat);
+int commit_struct(CodegenState *, unsigned char **, size_t *, enum OutputFormat,
+                  FormatData);
 
 /// Releases the memory used to store the IR output.
 void release_output_buffer(CodegenState *, unsigned char *);

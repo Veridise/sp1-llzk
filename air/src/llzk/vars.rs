@@ -14,6 +14,8 @@ pub enum FeltVar {
     ArrayArg { arg: Value, idx: usize },
     /// Scalar argument used to encode a circuit input
     Arg { arg: FeltValue },
+    /// Mark a circuit variable as ignored to avoid generating LLZK IR for it.
+    Ignore,
 }
 
 impl From<FeltVar> for FeltValue {
@@ -28,6 +30,7 @@ impl From<FeltVar> for FeltValue {
                 codegen.read_array(arg, index).into()
             }
             FeltVar::Arg { arg } => arg,
+            FeltVar::Ignore => unreachable!(),
         }
     }
 }

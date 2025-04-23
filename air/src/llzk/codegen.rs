@@ -104,6 +104,17 @@ impl Codegen {
                         super::OutputFormats::Bytecode => todo!(),
                         super::OutputFormats::Picus => llzk_bridge::OutputFormat_OF_Picus,
                     },
+                    match format {
+                        super::OutputFormats::Assembly => {
+                            llzk_bridge::FormatData { Assembly: llzk_bridge::AssemblyFormatData {} }
+                        }
+                        super::OutputFormats::Bytecode => {
+                            llzk_bridge::FormatData { Bytecode: llzk_bridge::BytecodeFormatData {} }
+                        }
+                        super::OutputFormats::Picus => llzk_bridge::FormatData {
+                            Picus: llzk_bridge::PicusFormatData { prime: super::P },
+                        },
+                    },
                 )
             };
             if res > 0 {

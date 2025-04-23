@@ -117,8 +117,9 @@ void initialize_struct(CodegenState *state, StructSpec spec) {
   for (size_t i = 0; i < spec.n_outputs; i++) {
     builder.create<llzk::FieldDefOp>(unk, builder.getStringAttr(o + Twine(i)),
                                      felt);
-    builder.create<llzk::FieldDefOp>(unk, builder.getStringAttr(on + Twine(i)),
-                                     felt);
+    // builder.create<llzk::FieldDefOp>(unk, builder.getStringAttr(on +
+    // Twine(i)),
+    //                                  felt);
   }
   // 6. Create the constrain function with the required arguments
   auto selfType = newStruct.getType();
@@ -132,7 +133,7 @@ void initialize_struct(CodegenState *state, StructSpec spec) {
       /*Inputs*/
       FELT_ARR(spec.n_inputs),
       /*InputsNext*/
-      FELT_ARR(spec.n_inputs),
+      /*FELT_ARR(spec.n_inputs),*/
       /*Preprocessed*/
       FELT_ARR(spec.n_preprocessed),
       /*PreprocessedNext*/
@@ -196,7 +197,7 @@ static int dump_assembly(const T &op, unsigned char **out, size_t *size) {
 /// Writes the IR generated for the current struct into the output buffer.
 /// The caller needs to free the pointer with `release_output_buffer()`.
 int commit_struct(CodegenState *state, unsigned char **out, size_t *size,
-                  OutputFormat format) {
+                  OutputFormat format, FormatData data) {
   if (!size)
     return 3;
   *size = -1;
@@ -211,11 +212,9 @@ int commit_struct(CodegenState *state, unsigned char **out, size_t *size,
     reset_target(unwrap(state).currentTarget, unwrap(state).builder);
     break;
   case OF_Picus: {
+    auto prime = llvm::APInt(sizeof(data.Picus.prime) << 3, data.Picus.prime);
     auto picusCircuit =
-        llzk::translateModuleToPicus(unwrap(state).currentTarget);
-    if (!picusCircuit) {
-      return 4;
-    }
+        llzk::translateModuleToPicus(unwrap(state).currentTarget, prime);
     res = dump_assembly(picusCircuit, out, size);
 
     if (res != 0)

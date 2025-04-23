@@ -5,6 +5,7 @@
 use p3_baby_bear::BabyBear;
 use p3_field::extension::BinomialExtensionField;
 
+pub const P: usize = 0x78000001;
 pub type Felt = BabyBear;
 pub const EXT_FELT_DEGREE: usize = 4;
 pub const FIELD_BETA: usize = 11;
