@@ -138,17 +138,17 @@ void initialize_struct(CodegenState *state, StructSpec spec) {
       /*PreprocessedNext*/
       FELT_ARR(spec.n_preprocessed),
       /*Permutations*/
-      EXTFELT_ARR(spec.n_permutations),
+      /*EXTFELT_ARR(spec.n_permutations),*/
       /*PermutationsNext*/
-      EXTFELT_ARR(spec.n_permutations),
+      /*EXTFELT_ARR(spec.n_permutations),*/
       /*PublicValues*/
       FELT_ARR(spec.n_public_values),
       /*PermutationChallenges*/
-      EXTFELT_ARR(spec.n_permutation_challenges),
+      /*EXTFELT_ARR(spec.n_permutation_challenges),*/
       /*GlobalCumulativeSum*/
-      FELT_ARR(spec.global_cumulative_sum_total),
+      /*FELT_ARR(spec.global_cumulative_sum_total),*/
       /*LocalCumulativeSum*/
-      extfelt,
+      /*extfelt,*/
       /*IsFirstRow*/
       felt,
       /*IsLastRow*/
@@ -179,7 +179,7 @@ int has_struct(CodegenState *state) {
 }
 
 template <typename T>
-static int dump_assembly(const T& op, unsigned char **out, size_t *size) {
+static int dump_assembly(const T &op, unsigned char **out, size_t *size) {
   if (!op)
     return 2;
   std::string s;
@@ -211,7 +211,8 @@ int commit_struct(CodegenState *state, unsigned char **out, size_t *size,
     reset_target(unwrap(state).currentTarget, unwrap(state).builder);
     break;
   case OF_Picus: {
-    auto picusCircuit = llzk::translateModuleToPicus(unwrap(state).currentTarget);
+    auto picusCircuit =
+        llzk::translateModuleToPicus(unwrap(state).currentTarget);
     if (!picusCircuit) {
       return 4;
     }

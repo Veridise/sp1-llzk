@@ -4,6 +4,7 @@
 #include <OpsGen.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/SmallVectorExtras.h>
+#include <llvm/Support/Debug.h>
 #include <llzk/Dialect/LLZK/IR/Ops.h>
 #include <llzk/Dialect/LLZK/IR/Types.h>
 #include <llzk/Dialect/LLZK/Util/AttributeHelper.h>
@@ -75,13 +76,10 @@ Value get_self_value(CodegenState *state) {
 
 Value create_field_read(CodegenState *state, Value strct, Symbol field,
                         ValueType type) {
-  return wrap(unwrap(state)
-                  .builder
-                  .create<llzk::FieldReadOp>(
-                      unwrap(state).builder.getUnknownLoc(), unwrap(type),
-                      unwrap(strct),
-                      unwrap(state).builder.getStringAttr(unwrap(field)))
-                  .getResult());
+  auto op = unwrap(state).builder.create<llzk::FieldReadOp>(
+      unwrap(state).builder.getUnknownLoc(), unwrap(type), unwrap(strct),
+      unwrap(state).builder.getStringAttr(unwrap(field)));
+  return wrap(op.getResult());
 }
 
 Value get_func_argument(CodegenState *state, unsigned char idx) {

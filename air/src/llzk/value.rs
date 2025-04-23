@@ -22,7 +22,7 @@ impl From<FeltValue> for Value {
 
 impl From<ExtFeltValue> for Value {
     fn from(value: ExtFeltValue) -> Self {
-        value.inner
+        unreachable!()
     }
 }
 
@@ -33,7 +33,7 @@ pub struct FeltValue {
 
 #[derive(Clone, Debug, Copy)]
 pub struct ExtFeltValue {
-    inner: Value,
+    //inner: Value,
 }
 
 impl Default for FeltValue {
@@ -248,7 +248,7 @@ impl Default for ExtFeltValue {
 
 impl From<Value> for ExtFeltValue {
     fn from(value: Value) -> Self {
-        Self { inner: value }
+        Self { /*inner: value*/ }
     }
 }
 
@@ -314,12 +314,13 @@ impl AbstractField for ExtFeltValue {
 
 impl From<ExtFelt> for ExtFeltValue {
     fn from(value: ExtFelt) -> Self {
-        let values = value
-            .as_base_slice()
-            .iter()
-            .map(|s: &Felt| Into::<FeltValue>::into(*s))
-            .collect::<Vec<_>>();
-        ExtFeltValue::from_base_slice(&values)
+        Self {}
+        //let values = value
+        //    .as_base_slice()
+        //    .iter()
+        //    .map(|s: &Felt| Into::<FeltValue>::into(*s))
+        //    .collect::<Vec<_>>();
+        //ExtFeltValue::from_base_slice(&values)
     }
 }
 
@@ -341,7 +342,8 @@ impl Add<ExtFeltValue> for ExtFeltValue {
     type Output = ExtFeltValue;
 
     fn add(self, rhs: ExtFeltValue) -> Self::Output {
-        linear_ext_felt_op(self, rhs, |lhs, rhs| lhs + rhs)
+        Self::Output {}
+        //linear_ext_felt_op(self, rhs, |lhs, rhs| lhs + rhs)
     }
 }
 
@@ -365,7 +367,8 @@ impl Sub<ExtFeltValue> for ExtFeltValue {
     type Output = ExtFeltValue;
 
     fn sub(self, rhs: ExtFeltValue) -> Self::Output {
-        linear_ext_felt_op(self, rhs, |lhs, rhs| lhs - rhs)
+        Self::Output {}
+        //linear_ext_felt_op(self, rhs, |lhs, rhs| lhs - rhs)
     }
 }
 
@@ -389,16 +392,17 @@ impl Mul<ExtFeltValue> for ExtFeltValue {
     type Output = ExtFeltValue;
 
     fn mul(self, rhs: ExtFeltValue) -> Self::Output {
-        let lhs: &[FeltValue] = self.as_base_slice();
-        let rhs: &[FeltValue] = rhs.as_base_slice();
-        let nbeta: FeltValue = (-Felt::from_canonical_usize(FIELD_BETA)).into();
-
-        let out0 = lhs[0] * rhs[0] + nbeta * (lhs[1] * rhs[3] + lhs[2] * rhs[2] + lhs[3] * rhs[1]);
-        let out1 = lhs[0] * rhs[1] + lhs[1] * rhs[0] + nbeta * (lhs[2] * rhs[3] + lhs[3] * rhs[2]);
-        let out2 = lhs[0] * rhs[2] + lhs[1] * rhs[1] + lhs[2] * rhs[0] + nbeta * (lhs[3] * rhs[3]);
-        let out3 = lhs[0] * rhs[3] + lhs[1] * rhs[2] + lhs[2] * rhs[1] + lhs[3] * rhs[0];
-
-        Self::from_base_slice(&[out0, out1, out2, out3])
+        Self::Output {}
+        //let lhs: &[FeltValue] = self.as_base_slice();
+        //let rhs: &[FeltValue] = rhs.as_base_slice();
+        //let nbeta: FeltValue = (-Felt::from_canonical_usize(FIELD_BETA)).into();
+        //
+        //let out0 = lhs[0] * rhs[0] + nbeta * (lhs[1] * rhs[3] + lhs[2] * rhs[2] + lhs[3] * rhs[1]);
+        //let out1 = lhs[0] * rhs[1] + lhs[1] * rhs[0] + nbeta * (lhs[2] * rhs[3] + lhs[3] * rhs[2]);
+        //let out2 = lhs[0] * rhs[2] + lhs[1] * rhs[1] + lhs[2] * rhs[0] + nbeta * (lhs[3] * rhs[3]);
+        //let out3 = lhs[0] * rhs[3] + lhs[1] * rhs[2] + lhs[2] * rhs[1] + lhs[3] * rhs[0];
+        //
+        //Self::from_base_slice(&[out0, out1, out2, out3])
     }
 }
 
@@ -420,19 +424,19 @@ impl Mul<ExtFeltVar> for ExtFeltValue {
 
 impl AddAssign for ExtFeltValue {
     fn add_assign(&mut self, rhs: Self) {
-        self.inner = (*self + rhs).into();
+        //self.inner = (*self + rhs).into();
     }
 }
 
 impl SubAssign for ExtFeltValue {
     fn sub_assign(&mut self, rhs: Self) {
-        self.inner = (*self - rhs).into();
+        //self.inner = (*self - rhs).into();
     }
 }
 
 impl MulAssign for ExtFeltValue {
     fn mul_assign(&mut self, rhs: Self) {
-        self.inner = (*self * rhs).into();
+        //self.inner = (*self * rhs).into();
     }
 }
 
@@ -466,10 +470,11 @@ impl Product for ExtFeltValue {
 
 impl From<FeltValue> for ExtFeltValue {
     fn from(value: FeltValue) -> Self {
-        let zero = Felt::zero().into();
-        let bases: [FeltValue; <Self as AbstractExtensionField<FeltValue>>::D] =
-            core::array::from_fn(|i| if i == 0 { value } else { zero });
-        Self::from_base_slice(&bases)
+        Self {}
+        //let zero = Felt::zero().into();
+        //let bases: [FeltValue; <Self as AbstractExtensionField<FeltValue>>::D] =
+        //    core::array::from_fn(|i| if i == 0 { value } else { zero });
+        //Self::from_base_slice(&bases)
     }
 }
 
@@ -499,52 +504,56 @@ impl Mul<FeltValue> for ExtFeltValue {
 
 impl AddAssign<FeltValue> for ExtFeltValue {
     fn add_assign(&mut self, rhs: FeltValue) {
-        self.inner = (*self + rhs).into();
+        //self.inner = (*self + rhs).into();
     }
 }
 
 impl SubAssign<FeltValue> for ExtFeltValue {
     fn sub_assign(&mut self, rhs: FeltValue) {
-        self.inner = (*self - rhs).into();
+        //self.inner = (*self - rhs).into();
     }
 }
 
 impl MulAssign<FeltValue> for ExtFeltValue {
     fn mul_assign(&mut self, rhs: FeltValue) {
-        self.inner = (*self * rhs).into();
+        //self.inner = (*self * rhs).into();
     }
 }
 
 impl AbstractExtensionField<FeltValue> for ExtFeltValue {
     const D: usize = EXT_FELT_DEGREE;
 
-    fn from_base(value: FeltValue) -> Self {
-        value.into()
+    fn from_base(_value: FeltValue) -> Self {
+        Self {}
+        //value.into()
     }
 
-    fn from_base_slice(values: &[FeltValue]) -> Self {
-        let codegen = Codegen::instance();
-        codegen
-            .literal_array(
-                values,
-                &[<Self as AbstractExtensionField<FeltValue>>::D.try_into().unwrap()],
-            )
-            .into()
+    fn from_base_slice(_values: &[FeltValue]) -> Self {
+        Self {}
+        //let codegen = Codegen::instance();
+        //codegen
+        //    .literal_array(
+        //        values,
+        //        &[<Self as AbstractExtensionField<FeltValue>>::D.try_into().unwrap()],
+        //    )
+        //    .into()
     }
 
-    fn from_base_fn<F: FnMut(usize) -> FeltValue>(f: F) -> Self {
-        let values = (0..<Self as AbstractExtensionField<FeltValue>>::D).map(f).collect::<Vec<_>>();
-        Self::from_base_slice(&values)
+    fn from_base_fn<F: FnMut(usize) -> FeltValue>(_f: F) -> Self {
+        Self {}
+        //let values = (0..<Self as AbstractExtensionField<FeltValue>>::D).map(f).collect::<Vec<_>>();
+        //Self::from_base_slice(&values)
     }
 
     fn as_base_slice(&self) -> &[FeltValue] {
-        let codegen = Codegen::instance();
-        let deg = <Self as AbstractExtensionField<FeltValue>>::D;
-        let mut values = codegen.allocate::<FeltValue>(deg);
-        for i in 0..deg {
-            let index = codegen.const_index(i);
-            values[i] = codegen.read_array((*self).into(), index).into();
-        }
-        values
+        &[]
+        //let codegen = Codegen::instance();
+        //let deg = <Self as AbstractExtensionField<FeltValue>>::D;
+        //let mut values = codegen.allocate::<FeltValue>(deg);
+        //for i in 0..deg {
+        //    let index = codegen.const_index(i);
+        //    values[i] = codegen.read_array((*self).into(), index).into();
+        //}
+        //values
     }
 }

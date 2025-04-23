@@ -22,3 +22,9 @@ impl From<&str> for MlirStringRef {
         unsafe { mlirStringRefCreateFromCString(str.as_ptr() as *const i8) }
     }
 }
+
+impl Default for Value {
+    fn default() -> Self {
+        Self { ptr: std::ptr::null() }
+    }
+}

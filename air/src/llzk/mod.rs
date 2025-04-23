@@ -54,6 +54,7 @@ const FIELD_BETA: usize = field::FIELD_BETA;
 /// Opaque type that represents a IR type in llzk.
 pub type Type = llzk_bridge::ValueType;
 
+#[derive(Clone)]
 pub enum OutputFormats {
     Assembly,
     Bytecode,
@@ -94,12 +95,12 @@ pub enum Args {
     InputsNext,
     Preprocessed,
     PreprocessedNext,
-    Permutations,
-    PermutationsNext,
+    //Permutations,
+    //PermutationsNext,
     PublicValues,
-    PermutationChallenges,
-    GlobalCumulativeSum,
-    LocalCumulativeSum,
+    //PermutationChallenges,
+    //GlobalCumulativeSum,
+    //LocalCumulativeSum,
     IsFirstRow,
     IsLastRow,
     IsTransition,
@@ -144,29 +145,43 @@ impl<'a> CodegenChipVars {
                 main_vars(codegen, Args::Inputs, n_inputs, "output"),
                 main_vars(codegen, Args::InputsNext, n_inputs, "output_next"),
             ),
-            perm: air_extfelt_values_from_args(
-                chip.permutation_width(),
-                Args::Permutations,
-                Args::PermutationsNext,
-                codegen,
-            ),
-            perm_challenges: init_vars(
-                PERM_CHALLENGES_COUNT,
-                extfelt_arg(codegen, Args::PermutationChallenges),
-            ),
-            local_cumulative_sum: ExtFeltVar::Arg {
-                arg: codegen.get_func_arg(Args::LocalCumulativeSum).into(),
+            perm: AirOpenedValues {
+                local: (0..chip.permutation_width()).map(|_| ExtFeltVar {}).collect::<Vec<_>>(),
+                next: (0..chip.permutation_width()).map(|_| ExtFeltVar {}).collect::<Vec<_>>(),
             },
+            //perm: air_extfelt_values_from_args(
+            //    chip.permutation_width(),
+            //    Args::Permutations,
+            //    Args::PermutationsNext,
+            //    codegen,
+            //),
+            perm_challenges: (0..PERM_CHALLENGES_COUNT).map(|_| ExtFeltVar {}).collect::<Vec<_>>(),
+            //perm_challenges: init_vars(
+            //    PERM_CHALLENGES_COUNT,
+            //    extfelt_arg(codegen, Args::PermutationChallenges),
+            //),
+            local_cumulative_sum: ExtFeltVar {},
+            //local_cumulative_sum: ExtFeltVar::Arg {
+            //    arg: codegen.get_func_arg(Args::LocalCumulativeSum).into(),
+            //},
             global_cumulative_sum: SepticDigest(SepticCurve {
-                x: SepticExtension(core::array::from_fn(felt_arg(
-                    codegen,
-                    Args::GlobalCumulativeSum,
-                ))),
-                y: SepticExtension(core::array::from_fn(felt_arg_offset::<7>(
-                    codegen,
-                    Args::GlobalCumulativeSum,
-                ))),
+                x: SepticExtension(core::array::from_fn(|_| FeltVar::Arg {
+                    arg: FeltValue::default(),
+                })),
+                y: SepticExtension(core::array::from_fn(|_| FeltVar::Arg {
+                    arg: FeltValue::default(),
+                })),
             }),
+            //global_cumulative_sum: SepticDigest(SepticCurve {
+            //    x: SepticExtension(core::array::from_fn(felt_arg(
+            //        codegen,
+            //        Args::GlobalCumulativeSum,
+            //    ))),
+            //    y: SepticExtension(core::array::from_fn(felt_arg_offset::<7>(
+            //        codegen,
+            //        Args::GlobalCumulativeSum,
+            //    ))),
+            //}),
             public_values: init_vars(PROOF_MAX_NUM_PVS, felt_arg(codegen, Args::PublicValues)),
             is_first_row: FeltVar::Arg { arg: codegen.get_func_arg(Args::IsFirstRow).into() },
             is_last_row: FeltVar::Arg { arg: codegen.get_func_arg(Args::IsLastRow).into() },
@@ -230,10 +245,11 @@ impl ExtensionBuilder for CodegenBuilder<'_> {
     where
         I: Into<Self::ExprEF>,
     {
-        let x: ExtFeltValue = x.into();
-        let zero: ExtFeltValue = ExtFelt::zero().into();
-        let codegen = Codegen::instance();
-        codegen.emit_eq(x.into(), zero.into());
+        // Constraints for extended field elements are not generated.
+        //let x: ExtFeltValue = x.into();
+        //let zero: ExtFeltValue = ExtFelt::zero().into();
+        //let codegen = Codegen::instance();
+        //codegen.emit_eq(x.into(), zero.into());
     }
 }
 

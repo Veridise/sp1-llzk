@@ -90,19 +90,20 @@ impl Codegen {
 
     /// Returns the final output of generating LLZK. This output does not depend on the internal
     /// state of the code generator and can be safely used after its lifetime ends.
-    pub fn extract_output(&self) -> CodegenOutput {
-        let mut output = CodegenOutput {
-            bytes: std::ptr::null_mut(),
-            size: 0,
-            format: super::OutputFormats::Picus, // Picus for testing.
-        };
+    pub fn extract_output(&self, format: super::OutputFormats) -> CodegenOutput {
+        let mut output =
+            CodegenOutput { bytes: std::ptr::null_mut(), size: 0, format: format.clone() };
         if unsafe { llzk_bridge::has_struct(self.inner) } != 0 {
             let res = unsafe {
                 llzk_bridge::commit_struct(
                     self.inner,
                     &mut output.bytes,
                     &mut output.size,
-                    llzk_bridge::OutputFormat_OF_Picus,
+                    match format {
+                        super::OutputFormats::Assembly => llzk_bridge::OutputFormat_OF_Assembly,
+                        super::OutputFormats::Bytecode => todo!(),
+                        super::OutputFormats::Picus => llzk_bridge::OutputFormat_OF_Picus,
+                    },
                 )
             };
             if res > 0 {

@@ -16,7 +16,9 @@ pub fn main_vars<'a>(
         if idx < n_inputs {
             FeltVar::ArrayArg { arg: codegen.get_func_arg(arg.clone()), idx }
         } else {
-            FeltVar::Field { name: codegen.str_to_symbol(format!("{}{}", prefix, idx).as_str()) }
+            FeltVar::Field {
+                name: codegen.str_to_symbol(format!("{}{}", prefix, idx - n_inputs).as_str()),
+            }
         }
     })
 }
@@ -42,7 +44,7 @@ pub fn extfelt_arg<'a>(
     codegen: &'a Codegen,
     arg: Args,
 ) -> Box<dyn FnMut(usize) -> ExtFeltVar + 'a> {
-    Box::new(move |idx| ExtFeltVar::ArrayArg { arg: codegen.get_func_arg(arg.clone()), idx })
+    Box::new(move |idx| ExtFeltVar {})
 }
 
 #[inline]

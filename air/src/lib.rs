@@ -38,10 +38,10 @@ use symbolic_expr_f::SymbolicExprF;
 use symbolic_var_ef::SymbolicVarEF;
 use symbolic_var_f::SymbolicVarF;
 
+use crate::llzk::OutputFormats;
+use p3_field::AbstractField;
 use sp1_core_machine::operations::AddOperation;
 use sp1_stark::{air::SP1AirBuilder, Word};
-
-use p3_field::AbstractField;
 
 pub type F = BabyBear;
 
@@ -251,7 +251,11 @@ pub fn CUDA_P3_EVAL_RESET() {
     *CUDA_P3_EVAL_EXPR_EF_CTR.lock().unwrap() = 0;
 }
 
-pub fn codegen_llzk_eval<A>(chip: &Chip<F, A>, n_inputs: usize) -> llzk::CodegenOutput
+pub fn codegen_llzk_eval<A>(
+    chip: &Chip<F, A>,
+    n_inputs: usize,
+    format: llzk::OutputFormats,
+) -> llzk::CodegenOutput
 where
     A: for<'a> Air<llzk::CodegenBuilder<'a>> + MachineAir<F>,
 {
@@ -261,7 +265,7 @@ where
     let vars = llzk::CodegenChipVars::from_chip::<A>(chip, n_inputs, &codegen);
     let mut builder = llzk::CodegenBuilder::new(&vars);
     chip.eval(&mut builder);
-    codegen.extract_output()
+    codegen.extract_output(format)
 }
 
 #[cfg(test)]
@@ -288,9 +292,9 @@ mod tests {
     use std::borrow::Borrow;
 
     use crate::codegen_cuda_eval;
+    use crate::llzk::OutputFormats;
     use crate::picusextractor;
     use crate::PICUS_EXTRACTOR;
-
     #[derive(AlignedBorrow, Default, Clone, Copy)]
     #[repr(C)]
     struct AddCols<T> {
@@ -381,23 +385,22 @@ mod tests {
     }
 
     #[test]
-    pub fn test_add_llzk() {
+    pub fn test_add_llzk_assembly() {
         setup_logger();
 
         let chip = AddChip;
         let chip = Chip::new(chip);
-        let output = codegen_llzk_eval(&chip, 8);
-        println!("produced IR: {output}");
-        // for chip in chips {
-        //     if chip.name() == "AddSub" {
-        //         let (code, f_ctr, _, f_constants, ef_constants, picusextractor) = codegen_cuda_eval(chip);
-        //         println!("{:#?}", code);
-        //         println!("{}", f_ctr);
-        //         println!("{:?}", f_constants);
-        //         println!("{:?}", ef_constants);
-        //         return;
-        //     }
-        // }
-        // panic!("no AddSub chip found");
+        let output = codegen_llzk_eval(&chip, 8, OutputFormats::Assembly);
+        println!("//produced IR:\n{output}");
+    }
+
+    #[test]
+    pub fn test_add_llzk_picus() {
+        setup_logger();
+
+        let chip = AddChip;
+        let chip = Chip::new(chip);
+        let output = codegen_llzk_eval(&chip, 8, OutputFormats::Picus);
+        println!(";produced Picus:\n{output}");
     }
 }

@@ -114,23 +114,24 @@ impl Mul<FeltValue> for FeltVar {
 }
 
 #[derive(Clone, Copy)]
-pub enum ExtFeltVar {
-    /// Array input of extended field elements.
-    ArrayArg { arg: Value, idx: usize },
-    /// Scalar input of extended field element type.
-    Arg { arg: ExtFeltValue },
-}
+pub struct ExtFeltVar {}
+/// Array input of extended field elements.
+//ArrayArg { arg: Value, idx: usize },
+/// Scalar input of extended field element type.
+//Arg { arg: ExtFeltValue },
+//}
 
 impl From<ExtFeltVar> for ExtFeltValue {
     fn from(value: ExtFeltVar) -> Self {
-        let codegen = Codegen::instance();
-        match value {
-            ExtFeltVar::ArrayArg { arg, idx } => {
-                let index = codegen.const_index(idx);
-                codegen.read_array(arg, index).into()
-            }
-            ExtFeltVar::Arg { arg } => arg,
-        }
+        Self {}
+        //let codegen = Codegen::instance();
+        //match value {
+        //    ExtFeltVar::ArrayArg { arg, idx } => {
+        //        let index = codegen.const_index(idx);
+        //        codegen.read_array(arg, index).into()
+        //    }
+        //    ExtFeltVar::Arg { arg } => arg,
+        //}
     }
 }
 
