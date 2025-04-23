@@ -31,11 +31,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1745360827,
-        "narHash": "sha256-yWj+fll43rWBkfqBlmwmVpqgjMkzbx670+v7mzU1q2E=",
+        "lastModified": 1745416334,
+        "narHash": "sha256-aoQEB0zXEA0KAnyGrjR27uINjZr1bgpnzXcVJsg4fCs=",
         "ref": "dani/LLZK-253-LLZK-to-Picus-translation",
-        "rev": "c8daa11397fcd2ec23a816e69aeca7bd25659f6a",
-        "revCount": 175,
+        "rev": "5973ecc17607fead2d222dbc04ffcf18d79c33c3",
+        "revCount": 179,
         "type": "git",
         "url": "ssh://git@github.com/Veridise/llzk-lib.git"
       },
