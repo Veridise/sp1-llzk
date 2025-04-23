@@ -179,12 +179,12 @@ int has_struct(CodegenState *state) {
 }
 
 template <typename T>
-static int dump_assembly(T op, unsigned char **out, size_t *size) {
+static int dump_assembly(const T& op, unsigned char **out, size_t *size) {
   if (!op)
     return 2;
   std::string s;
   llvm::raw_string_ostream ss(s);
-  op.print(ss);
+  op->print(ss);
   *size = s.size();
   *out = reinterpret_cast<unsigned char *>(malloc(s.size()));
   if (!*out)
@@ -210,17 +210,18 @@ int commit_struct(CodegenState *state, unsigned char **out, size_t *size,
       return res;
     reset_target(unwrap(state).currentTarget, unwrap(state).builder);
     break;
-  case OF_Picus:
-    auto picusCircuit = translateModuleToPicus(unwrap(state).currentTarget);
+  case OF_Picus: {
+    auto picusCircuit = llzk::translateModuleToPicus(unwrap(state).currentTarget);
     if (!picusCircuit) {
       return 4;
     }
-    res = dump_assembly(*picusCircuit, out, size);
+    res = dump_assembly(picusCircuit, out, size);
 
     if (res != 0)
       return res;
     reset_target(unwrap(state).currentTarget, unwrap(state).builder);
     break;
+  }
   case OF_Bytecode:
     llvm::errs() << "Bytecode output is not supported yet\n";
     res = 1;
