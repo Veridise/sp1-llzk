@@ -5,7 +5,7 @@ use p3_matrix::dense::RowMajorMatrix;
 use p3_matrix::Matrix;
 use sp1_core_executor::ExecutionRecord;
 use sp1_core_executor::Program;
-use sp1_core_machine::operations::Add4Operation;
+use sp1_core_machine::operations::Add5Operation;
 use sp1_derive::AlignedBorrow;
 use sp1_stark::air::MachineAir;
 use sp1_stark::{air::SP1AirBuilder, Word};
@@ -13,25 +13,26 @@ use std::borrow::Borrow;
 
 #[derive(AlignedBorrow, Default, Clone, Copy)]
 #[repr(C)]
-struct Add4Cols<T> {
+struct Add5Cols<T> {
     a: Word<T>,
     b: Word<T>,
     c: Word<T>,
     d: Word<T>,
+    e: Word<T>,
     is_real: T,
-    op: Add4Operation<T>,
+    op: Add5Operation<T>,
 }
 
 #[derive(Default)]
-pub struct Add4Chip;
+pub struct Add5Chip;
 
-impl<F: PrimeField32> MachineAir<F> for Add4Chip {
+impl<F: PrimeField32> MachineAir<F> for Add5Chip {
     type Record = ExecutionRecord;
 
     type Program = Program;
 
     fn name(&self) -> String {
-        "Add4".to_string()
+        "Add5".to_string()
     }
 
     fn num_rows(&self, _input: &Self::Record) -> Option<usize> {
@@ -55,35 +56,33 @@ impl<F: PrimeField32> MachineAir<F> for Add4Chip {
     }
 }
 
-impl ChipInputs for Add4Chip {
+impl ChipInputs for Add5Chip {
     fn inputs() -> usize {
-        size_of::<Add4Cols<u8>>() - size_of::<Add4Operation<u8>>()
+        size_of::<Add5Cols<u8>>() - size_of::<Add5Operation<u8>>()
     }
 }
 
-impl<F> BaseAir<F> for Add4Chip {
+impl<F> BaseAir<F> for Add5Chip {
     fn width(&self) -> usize {
-        size_of::<Add4Cols<u8>>()
+        size_of::<Add5Cols<u8>>()
     }
 }
 
-impl<AB> Air<AB> for Add4Chip
+impl<AB> Air<AB> for Add5Chip
 where
     AB: SP1AirBuilder,
 {
     fn eval(&self, builder: &mut AB) {
         let main = builder.main();
         let local = main.row_slice(0);
-        let local: &Add4Cols<AB::Var> = (*local).borrow();
+        let local: &Add5Cols<AB::Var> = (*local).borrow();
+        let words: [Word<AB::Var>; 5] = [local.a, local.b, local.c, local.d, local.e];
         // constraining `is_real`` to one because it is defined as a variable and generating a constant
         // var is not super easy
         builder.assert_one(local.is_real);
-        Add4Operation::<AB::F>::eval(
+        Add5Operation::<AB::F>::eval(
             builder,
-            local.a,
-            local.b,
-            local.c,
-            local.d,
+            &words,
             local.is_real,
             local.op,
         );
