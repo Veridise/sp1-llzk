@@ -11,6 +11,7 @@
 #include <llzk/Dialect/LLZK/Util/AttributeHelper.h>
 #include <llzk/Target/Picus/Export.h>
 #include <llzk/Target/Picus/Language/Circuit.h>
+#include <mlir/Bytecode/BytecodeWriter.h>
 #include <mlir/CAPI/Support.h>
 #include <string>
 
@@ -27,7 +28,7 @@ static mlir::DialectRegistry dialects() {
 }
 
 CodegenStateImpl::CodegenStateImpl()
-    : registry{dialects()}, ctx{registry}, builder{&ctx}, allocator{} {
+    : registry{dialects()}, ctx{registry}, builder{&ctx} {
   ctx.loadAllAvailableDialects();
 }
 
@@ -59,12 +60,6 @@ CodegenState *get_state() {
     llzk::sharedState.impl = reinterpret_cast<void *>(impl);
   }
   return &llzk::sharedState;
-}
-
-/// Cleans up the codegen state.
-void release_state(CodegenState *state) {
-  delete reinterpret_cast<llzk::CodegenStateImpl *>(state->impl);
-  state->impl = nullptr;
 }
 
 void reset_target(CodegenState *state) {
@@ -99,6 +94,7 @@ void initialize_struct(CodegenState *state, StructSpec spec) {
   auto unk = builder.getUnknownLoc();
   // 1. Destroy the current module if any
   reset_target(state);
+
   // 2. Create the module
   unwrap(state).setTarget(builder.create<ModuleOp>(unk));
   unwrap(state).currentTarget()->setAttr(
@@ -106,20 +102,23 @@ void initialize_struct(CodegenState *state, StructSpec spec) {
       builder.getStringAttr(llzk::LLZKDialect::getDialectNamespace()));
   builder.setInsertionPointToStart(
       &unwrap(state).currentTarget().getBodyRegion().front());
+
   // 3. Create the support globals
   create_range_global(state, 8, llzk::NAME_8BITRANGE);
   create_range_global(state, 16, llzk::NAME_16BITRANGE);
+
   // 4. Create the struct
   auto newStruct = builder.create<llzk::StructDefOp>(
       unk, builder.getStringAttr(unwrap(spec.name)), builder.getArrayAttr({}));
   builder.setInsertionPointToStart(&newStruct.getBodyRegion().emplaceBlock());
+
   // 5. Create the output fields
-  /*Twine o("output");*/
   auto felt = llzk::FeltType::get(&unwrap(state).ctx);
   for (size_t i = 0; i < spec.n_outputs; i++) {
     builder.create<llzk::FieldDefOp>(
         unk, builder.getStringAttr("output" + Twine(i)), felt);
   }
+
   // 6. Create the constrain function with the required arguments
   auto selfType = newStruct.getType();
 #define FELT_ARR(n) llzk::ArrayType::get(felt, {static_cast<long long>(n)})
@@ -160,50 +159,93 @@ int has_struct(CodegenState *state) {
   return unwrap(state).currentTarget() != nullptr;
 }
 
-template <typename T>
-static int dump_assembly(const T &op, unsigned char **out, size_t *size) {
-  if (!op)
-    return 2;
-  std::string s;
-  llvm::raw_string_ostream ss(s);
-  op->print(ss);
-  *size = s.size();
-  *out = reinterpret_cast<unsigned char *>(malloc(s.size()));
-  if (!*out)
-    return 2;
-  memcpy(*out, s.data(), s.size());
-  return 0;
+namespace {
+
+struct OutputDataCtx {
+  using ptr = unsigned char *;
+
+  ptr *out;
+  size_t *size;
+  OutputFormat format;
+  FormatData data;
+
+  template <typename T, typename F> LogicalResult dump(const T &op, F f) {
+    if (!op)
+      return failure();
+
+    auto s = dump_to_string(op, f);
+    if (failed(s))
+      return failure();
+    auto ptr = allocate(s->size());
+    if (failed(ptr))
+      return failure();
+    *out = *ptr;
+    *size = s->size();
+    memcpy(*out, s->data(), s->size());
+    return success();
+  }
+
+  LogicalResult validate() {
+    return failure(out == nullptr || size == nullptr);
+  }
+
+private:
+  FailureOr<ptr> allocate(size_t size) {
+    auto p = new unsigned char[size];
+    if (!p)
+      return failure();
+    return p;
+  }
+
+  template <typename T, typename F>
+  FailureOr<std::string> dump_to_string(const T &op, F f) {
+    std::string s;
+    llvm::raw_string_ostream ss(s);
+    if (failed(f(op, ss))) {
+      return failure();
+    }
+    return s;
+  }
+};
+
+} // namespace
+
+static LogicalResult commit_struct_impl(ModuleOp op, OutputDataCtx ctx) {
+  if (failed(ctx.validate()))
+    return failure();
+  switch (ctx.format) {
+  case OF_Assembly:
+    return ctx.dump(op, [](auto op, auto &os) {
+      op->print(os);
+      return success();
+    });
+  case OF_Picus: {
+    auto prime =
+        llvm::APInt(sizeof(ctx.data.picus.prime) << 3, ctx.data.picus.prime);
+    auto picusCircuit = llzk::translateModuleToPicus(op, prime);
+    return ctx.dump(picusCircuit, [](auto &op, auto &os) {
+      op->print(os);
+      return success();
+    });
+  }
+  case OF_Bytecode:
+    return ctx.dump(op, [](auto op, auto &os) {
+      mlir::BytecodeWriterConfig config;
+      return mlir::writeBytecodeToFile(op, os, config);
+    });
+  }
 }
 
 /// Writes the IR generated for the current struct into the output buffer.
 /// The caller needs to free the pointer with `release_output_buffer()`.
 int commit_struct(CodegenState *state, unsigned char **out, size_t *size,
                   OutputFormat format, FormatData data) {
-  if (!size)
-    return 3;
-  *size = -1;
-  if (!out)
-    return 3;
-  switch (format) {
-  case OF_Assembly:
-    return dump_assembly(unwrap(state).currentTarget(), out, size);
-  case OF_Picus: {
-    auto prime = llvm::APInt(sizeof(data.picus.prime) << 3, data.picus.prime);
-    auto picusCircuit =
-        llzk::translateModuleToPicus(unwrap(state).currentTarget(), prime);
-    return dump_assembly(picusCircuit, out, size);
-  }
-  case OF_Bytecode:
-    llvm::errs() << "Bytecode output is not supported yet\n";
+  if (failed(commit_struct_impl(
+          unwrap(state).currentTarget(),
+          {.out = out, .size = size, .format = format, .data = data})))
     return 1;
-  }
+  return 0;
 }
 
 /// Releases the memory used to store the IR output.
-void release_output_buffer(CodegenState *, unsigned char *buf) { free(buf); }
-
-/// Allocates a chunk of bytes and ties it to the lifetime of the
-/// state.
-void *allocate_chunk(CodegenState *state, size_t len) {
-  return unwrap(state).allocator.Allocate(len, llvm::Align());
-}
+void release_output_buffer(CodegenState *, unsigned char *buf) { delete[] buf; }

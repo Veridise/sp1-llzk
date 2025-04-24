@@ -1,5 +1,4 @@
 use crate::air::CodegenBuilder;
-//use crate::air::PERM_CHALLENGES_COUNT;
 use crate::field::Felt;
 use crate::output::{CodegenOutput, OutputFormats};
 use crate::value::{FeltValue, Value};
@@ -10,15 +9,8 @@ use p3_field::AbstractField;
 use sp1_stark::PROOF_MAX_NUM_PVS;
 use sp1_stark::{air::MachineAir, Chip};
 use std::error::Error;
-use std::ffi::c_void;
 use std::fmt;
 use std::ops::Deref;
-
-/// Opaque type that represents a IR type in llzk.
-//type Type = llzk_bridge::ValueType;
-
-/// A reference to a name in MLIR.
-//type Symbol = llzk_bridge::Symbol;
 
 /// The order of the arguments in the constraint function
 #[repr(u8)]
@@ -197,16 +189,6 @@ impl Codegen {
         ))
     }
 
-    /// Allocates a piece of memory that is managed by an internal allocator tied to the lifetime
-    /// of the current codegen.
-    pub fn allocate<'a, T>(&self, len: usize) -> &'a mut [T] {
-        unsafe {
-            let addr: *mut c_void =
-                llzk_bridge::allocate_chunk(self.inner, len * std::mem::size_of::<T>());
-            std::slice::from_raw_parts_mut(addr as *mut T, len)
-        }
-    }
-
     fn check_has_struct(&self) -> CodegenResult<()> {
         if self.has_struct() {
             return Ok(());
@@ -230,25 +212,6 @@ impl Codegen {
     pub fn read_array(&self, arr: Value, idx: Value) -> CodegenResult<Value> {
         self.check_has_struct()?;
         Ok(unsafe { llzk_bridge::create_read_array(self.inner, arr, idx) })
-    }
-
-    /// Creates a literal array of values
-    pub fn literal_array<I: Into<Value> + Clone>(
-        &self,
-        values: &[I],
-        sizes: &[i64],
-    ) -> CodegenResult<Value> {
-        self.check_has_struct()?;
-        let values = values.iter().map(|v| v.clone().into()).collect::<Vec<Value>>();
-        Ok(unsafe {
-            llzk_bridge::create_array(
-                self.inner,
-                values.as_ptr(),
-                values.len(),
-                sizes.as_ptr(),
-                sizes.len(),
-            )
-        })
     }
 
     /// Returns the value contained in a field of the current struct

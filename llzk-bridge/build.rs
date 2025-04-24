@@ -17,6 +17,15 @@ const BRIDGE_HEADER: &str = "include/bridge.h";
 // Taken from mlir-sys
 const LLVM_MAJOR_VERSION: usize = 18;
 
+fn link_llzk() -> Result<(), Box<dyn Error>> {
+    let path = env::var("LLZK_LIB_PATH")?;
+    println!("cargo:rustc-link-search={}", path);
+
+    println!("cargo:rustc-link-lib=LLZKDialect");
+    println!("cargo:rustc-link-lib=LLZKDialectRegistration");
+    Ok(())
+}
+
 fn link_mlir() -> Result<(), Box<dyn Error>> {
     let version = llvm_config("--version")?;
 
@@ -53,12 +62,6 @@ fn link_mlir() -> Result<(), Box<dyn Error>> {
             }
         }
     }
-
-    if let Ok(path) = env::var("LLZK_LIB_PATH") {
-        println!("cargo:rustc-link-search={}", path);
-    }
-    println!("cargo:rustc-link-lib=LLZKDialect");
-    println!("cargo:rustc-link-lib=LLZKDialectRegistration");
 
     for name in llvm_config("--libnames")?.trim().split(' ') {
         if let Some(name) = parse_archive_name(name) {
@@ -158,6 +161,10 @@ fn build_bridge(src: &str) {
 
 fn main() {
     if let Err(error) = link_mlir() {
+        eprintln!("{}", error);
+        exit(1);
+    }
+    if let Err(error) = link_llzk() {
         eprintln!("{}", error);
         exit(1);
     }

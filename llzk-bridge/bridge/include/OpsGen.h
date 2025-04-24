@@ -22,10 +22,6 @@ Value create_const_index(CodegenState *, unsigned long);
 /// Creates an llzk.constfelt op of Felt type.
 Value create_const_felt(CodegenState *, MlirStringRef);
 
-/// Creates a llzk.new_array op with the given values.
-Value create_array(CodegenState *, const Value *, size_t, const int64_t *,
-                   size_t);
-
 /// Returns a value representing the n-th element of an array.
 Value create_read_array(CodegenState *, Value, Value);
 

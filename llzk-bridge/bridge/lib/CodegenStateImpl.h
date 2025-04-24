@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CodegenState.h>
-#include <llvm/Support/Allocator.h>
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/MLIRContext.h>
@@ -17,7 +16,6 @@ struct CodegenStateImpl {
   mlir::DialectRegistry registry;
   mlir::MLIRContext ctx;
   mlir::OpBuilder builder;
-  llvm::BumpPtrAllocator allocator;
 
   void dump();
 

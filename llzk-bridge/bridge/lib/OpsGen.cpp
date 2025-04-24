@@ -35,22 +35,6 @@ Value create_const_felt(CodegenState *state, MlirStringRef valueAsString) {
                   .getResult());
 }
 
-Value create_array(CodegenState *state, const Value *values, size_t valueCount,
-                   const int64_t *dims, size_t dimCount) {
-  llvm::ArrayRef<Value> ref(values, valueCount);
-  llvm::SmallVector<mlir::Value> arrayValues =
-      llvm::map_to_vector(ref, [](auto v) { return unwrap(v); });
-  llvm::ArrayRef<int64_t> dimsRef(dims, dimCount);
-  assert(!arrayValues.empty());
-  auto innerType = arrayValues.front().getType();
-  auto type = llzk::ArrayType::get(innerType, dimsRef);
-  return wrap(unwrap(state)
-                  .builder
-                  .create<llzk::CreateArrayOp>(
-                      unwrap(state).builder.getUnknownLoc(), type, arrayValues)
-                  .getResult());
-}
-
 Value create_read_array(CodegenState *state, Value arr, Value index) {
   mlir::Value value = unwrap(arr);
   auto type = mlir::cast<llzk::ArrayType>(value.getType());

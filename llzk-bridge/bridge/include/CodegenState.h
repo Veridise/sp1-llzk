@@ -46,9 +46,6 @@ typedef union {
 /// it automatically.
 CodegenState *get_state();
 
-/// Cleans up the codegen state.
-void release_state(CodegenState *);
-
 /// Initializes a struct that is going to be the target of the IR generation.
 void initialize_struct(CodegenState *, StructSpec);
 
