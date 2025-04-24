@@ -1,5 +1,5 @@
 [workspace]
-members = ["air", "llzk-bridge"]
+members = ["air-llzk", "llzk-bridge"]
 
 resolver = "2"
 

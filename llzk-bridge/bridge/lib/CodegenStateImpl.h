@@ -5,6 +5,7 @@
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/MLIRContext.h>
+#include <mlir/IR/OwningOpRef.h>
 
 namespace llzk {
 
@@ -15,11 +16,17 @@ struct CodegenStateImpl {
 
   mlir::DialectRegistry registry;
   mlir::MLIRContext ctx;
-  mlir::ModuleOp currentTarget = nullptr;
   mlir::OpBuilder builder;
   llvm::BumpPtrAllocator allocator;
 
   void dump();
+
+  mlir::ModuleOp currentTarget() { return *_currentTarget; }
+  void noTarget() { _currentTarget = nullptr; }
+  void setTarget(mlir::ModuleOp op) { _currentTarget = op; }
+
+private:
+  mlir::OwningOpRef<mlir::ModuleOp> _currentTarget = nullptr;
 };
 
 } // namespace llzk

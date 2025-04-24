@@ -28,3 +28,33 @@ impl Default for Value {
         Self { ptr: std::ptr::null() }
     }
 }
+
+impl Default for AssemblyFormatData {
+    fn default() -> Self {
+        Self { dummy: Default::default() }
+    }
+}
+
+impl Default for BytecodeFormatData {
+    fn default() -> Self {
+        Self { dummy: Default::default() }
+    }
+}
+
+impl From<AssemblyFormatData> for FormatData {
+    fn from(assembly: AssemblyFormatData) -> Self {
+        Self { assembly }
+    }
+}
+
+impl From<BytecodeFormatData> for FormatData {
+    fn from(bytecode: BytecodeFormatData) -> Self {
+        Self { bytecode }
+    }
+}
+
+impl From<PicusFormatData> for FormatData {
+    fn from(picus: PicusFormatData) -> Self {
+        Self { picus }
+    }
+}

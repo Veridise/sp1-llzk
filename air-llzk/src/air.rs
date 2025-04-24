@@ -1,111 +1,24 @@
-mod babybear;
-mod codegen;
-mod helpers;
-mod value;
-mod vars;
-
-use core::fmt;
-
-use babybear as field;
-pub use codegen::Codegen;
-use codegen::CodegenWithStruct;
-use helpers::air_extfelt_values_from_args;
-use helpers::air_felt_values_from_args;
-use helpers::air_values;
-use helpers::extfelt_arg;
-use helpers::felt_arg;
-use helpers::felt_arg_offset;
-use helpers::init_vars;
-use helpers::main_vars;
-use p3_air::Air;
-use p3_air::AirBuilder;
-use p3_air::AirBuilderWithPublicValues;
-use p3_air::BaseAir;
-use p3_air::ExtensionBuilder;
-use p3_air::PairBuilder;
-use p3_air::PermutationAirBuilder;
+use crate::codegen::{Args, Codegen, StructCodegen};
+use crate::field::{ExtFelt, Felt};
+use crate::helpers::{air_felt_values_from_args, air_values, felt_arg, init_vars, main_vars};
+use crate::value::Value;
+use crate::value::{ExtFeltValue, FeltValue};
+use crate::vars::{ExtFeltVar, FeltVar};
+use p3_air::{
+    Air, AirBuilder, AirBuilderWithPublicValues, BaseAir, ExtensionBuilder, PairBuilder,
+    PermutationAirBuilder,
+};
 use p3_field::AbstractField;
-use p3_matrix::dense::RowMajorMatrixView;
-use p3_matrix::stack::VerticalPair;
+use p3_matrix::{dense::RowMajorMatrixView, stack::VerticalPair};
 use sp1_core_executor::ByteOpcode;
-use sp1_core_machine::air::WordAirBuilder;
-use sp1_stark::air::AirInteraction;
-use sp1_stark::air::BaseAirBuilder;
-use sp1_stark::air::ByteAirBuilder;
-use sp1_stark::air::MachineAir;
-use sp1_stark::air::MessageBuilder;
-use sp1_stark::air::MultiTableAirBuilder;
-use sp1_stark::septic_curve::SepticCurve;
-use sp1_stark::septic_digest::SepticDigest;
-use sp1_stark::septic_extension::SepticExtension;
-use sp1_stark::AirOpenedValues;
-use sp1_stark::Chip;
 use sp1_stark::PROOF_MAX_NUM_PVS;
-use value::ExtFeltValue;
-use value::FeltValue;
-use vars::ExtFeltVar;
-use vars::FeltVar;
-
-pub type Felt = field::Felt;
-pub type ExtFelt = field::ExtFelt;
-const EXT_FELT_DEGREE: usize = field::EXT_FELT_DEGREE;
-const FIELD_BETA: usize = field::FIELD_BETA;
-const P: usize = field::P;
-
-/// Opaque type that represents a IR type in llzk.
-pub type Type = llzk_bridge::ValueType;
-
-#[derive(Clone)]
-pub enum OutputFormats {
-    Assembly,
-    Bytecode,
-    Picus,
-}
-
-/// Final output type of the llzk code generator.
-pub struct CodegenOutput {
-    bytes: *mut u8,
-    size: usize,
-    format: OutputFormats,
-}
-
-impl Drop for CodegenOutput {
-    fn drop(&mut self) {
-        let codegen = Codegen::instance();
-        codegen.release_output(self);
-    }
-}
-
-impl fmt::Display for CodegenOutput {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let str = std::str::from_utf8(unsafe { std::slice::from_raw_parts(self.bytes, self.size) })
-            .unwrap();
-        write!(f, "{}", str)
-    }
-}
-
-/// A reference to a name in MLIR.
-pub type Symbol = llzk_bridge::Symbol;
-
-/// The order of the arguments in the constraint function
-#[repr(u8)]
-#[derive(Clone, Copy)]
-pub enum Args {
-    SelfArg = 0,
-    Inputs,
-    //InputsNext,
-    Preprocessed,
-    PreprocessedNext,
-    //Permutations,
-    //PermutationsNext,
-    PublicValues,
-    //PermutationChallenges,
-    //GlobalCumulativeSum,
-    //LocalCumulativeSum,
-    IsFirstRow,
-    IsLastRow,
-    IsTransition,
-}
+use sp1_stark::{
+    air::{AirInteraction, MachineAir, MessageBuilder, MultiTableAirBuilder},
+    septic_curve::SepticCurve,
+    septic_digest::SepticDigest,
+    septic_extension::SepticExtension,
+    AirOpenedValues, Chip,
+};
 
 /// Implements the interfaces used to communicate with the Air.
 pub struct CodegenChipVars {
@@ -121,7 +34,7 @@ pub struct CodegenChipVars {
     pub public_values: Vec<FeltVar>,
 }
 
-pub(crate) const PERM_CHALLENGES_COUNT: usize = 2;
+const PERM_CHALLENGES_COUNT: usize = 2;
 
 impl<'a> CodegenChipVars {
     /// Initializes the variables used for code generation given a chip and the number of values in
@@ -129,7 +42,7 @@ impl<'a> CodegenChipVars {
     pub fn from_chip<A>(
         chip: &Chip<Felt, A>,
         n_inputs: usize,
-        codegen: &'a CodegenWithStruct<'a>,
+        codegen: &'a StructCodegen<'a>,
     ) -> Self
     where
         A: Air<CodegenBuilder<'a>> + MachineAir<Felt>,
@@ -184,9 +97,15 @@ impl<'a> CodegenChipVars {
             //    ))),
             //}),
             public_values: init_vars(PROOF_MAX_NUM_PVS, felt_arg(codegen, Args::PublicValues)),
-            is_first_row: FeltVar::Arg { arg: codegen.get_func_arg(Args::IsFirstRow).into() },
-            is_last_row: FeltVar::Arg { arg: codegen.get_func_arg(Args::IsLastRow).into() },
-            is_transition: FeltVar::Arg { arg: codegen.get_func_arg(Args::IsTransition).into() },
+            is_first_row: FeltVar::Arg {
+                arg: codegen.get_func_arg(Args::IsFirstRow).unwrap().into(),
+            },
+            is_last_row: FeltVar::Arg {
+                arg: codegen.get_func_arg(Args::IsLastRow).unwrap().into(),
+            },
+            is_transition: FeltVar::Arg {
+                arg: codegen.get_func_arg(Args::IsTransition).unwrap().into(),
+            },
         }
     }
 }
@@ -232,8 +151,8 @@ impl<'a> AirBuilder for CodegenBuilder<'a> {
     fn assert_zero<I: Into<Self::Expr>>(&mut self, x: I) {
         let x: Self::Expr = x.into();
         let zero: Self::Expr = Felt::zero().into();
-        let codegen = Codegen::instance();
-        codegen.emit_eq(x.into(), zero.into());
+        let codegen = Codegen::instance().unwrap();
+        codegen.emit_eq(x.into(), zero.into()).unwrap();
     }
 }
 
@@ -242,15 +161,10 @@ impl ExtensionBuilder for CodegenBuilder<'_> {
     type ExprEF = ExtFeltValue;
     type VarEF = ExtFeltVar;
 
-    fn assert_zero_ext<I>(&mut self, x: I)
+    fn assert_zero_ext<I>(&mut self, _x: I)
     where
         I: Into<Self::ExprEF>,
     {
-        // Constraints for extended field elements are not generated.
-        //let x: ExtFeltValue = x.into();
-        //let zero: ExtFeltValue = ExtFelt::zero().into();
-        //let codegen = Codegen::instance();
-        //codegen.emit_eq(x.into(), zero.into());
     }
 }
 
@@ -292,47 +206,60 @@ impl<'a> AirBuilderWithPublicValues for CodegenBuilder<'a> {
     }
 }
 
+fn select_range(opcode: Felt) -> Option<Value> {
+    let codegen = Codegen::instance().unwrap();
+    let u8opc: Felt = Felt::from_canonical_u8(ByteOpcode::U8Range as u8);
+    let u16opc: Felt = Felt::from_canonical_u8(ByteOpcode::U16Range as u8);
+    if opcode == u8opc {
+        Some(codegen.get_8bit_range().unwrap())
+    } else if opcode == u16opc {
+        Some(codegen.get_16bit_range().unwrap())
+    } else {
+        None
+    }
+}
+
+fn is_not_zero(value: &&FeltValue) -> bool {
+    let codegen = Codegen::instance().unwrap();
+    codegen.get_const_felt_from_value((**value).into()) != Some(Felt::zero())
+}
+
+fn get_opcode(values: &[FeltValue]) -> Option<Felt> {
+    let codegen = Codegen::instance().unwrap();
+    codegen.get_const_felt_from_value(values[0].into())
+}
+
+fn handle_byte_interaction(values: &[FeltValue]) {
+    if values.is_empty() {
+        return;
+    }
+
+    let codegen = Codegen::instance().unwrap();
+    if let Some(opcode) = get_opcode(values) {
+        if let Some(range) = select_range(opcode) {
+            for value in values.iter().skip(1).filter(is_not_zero) {
+                codegen.emit_in((*value).into(), range).unwrap();
+            }
+        }
+    }
+}
+
 impl MessageBuilder<AirInteraction<FeltValue>> for CodegenBuilder<'_> {
     fn send(
         &mut self,
         message: AirInteraction<FeltValue>,
-        scope: sp1_stark::air::InteractionScope,
+        _scope: sp1_stark::air::InteractionScope,
     ) {
         match message.kind {
-            sp1_stark::InteractionKind::Byte => {
-                if (message.values.len() < 5) {
-                    panic!("Expected to have at least 5 inputs");
-                }
-
-                let codegen = Codegen::instance();
-                if let Some(opcode) = codegen.get_const_felt_from_value(message.values[0].into()) {
-                    let u8opc: Felt = Felt::from_canonical_u8(ByteOpcode::U8Range as u8);
-                    let u16opc: Felt = Felt::from_canonical_u8(ByteOpcode::U16Range as u8);
-                    if let Some(range) = if opcode == u8opc {
-                        Some(codegen.get_8bit_range())
-                    } else if opcode == u16opc {
-                        Some(codegen.get_16bit_range())
-                    } else {
-                        None
-                    } {
-                        for value in message.values.into_iter().skip(1) {
-                            if codegen.get_const_felt_from_value(value.into()) == Some(Felt::zero())
-                            {
-                                continue;
-                            }
-                            codegen.emit_in(value.into(), range);
-                        }
-                    }
-                }
-            }
+            sp1_stark::InteractionKind::Byte => handle_byte_interaction(&message.values),
             _ => {}
         }
     }
 
     fn receive(
         &mut self,
-        message: AirInteraction<FeltValue>,
-        scope: sp1_stark::air::InteractionScope,
+        _message: AirInteraction<FeltValue>,
+        _scope: sp1_stark::air::InteractionScope,
     ) {
         unreachable!()
     }

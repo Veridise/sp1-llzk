@@ -16,18 +16,18 @@ typedef struct CodegenState {
 /// Information used for initializing a struct target.
 typedef struct StructSpec {
   MlirStringRef name;
-  size_t n_inputs, n_outputs, n_preprocessed, n_permutations,
-      n_permutation_challenges, n_public_values, global_cumulative_sum_total;
-  long long extfelt_degree;
+  size_t n_inputs, n_outputs, n_preprocessed, n_public_values;
 } StructSpec;
 
 /// Final output format of the IR.
 enum OutputFormat { OF_Assembly, OF_Bytecode, OF_Picus };
 
 typedef struct AssemblyFormatData {
+  char dummy;
 } AssemblyFormatData;
 
 typedef struct BytecodeFormatData {
+  char dummy;
 } BytecodeFormatData;
 
 typedef struct PicusFormatData {
@@ -36,9 +36,9 @@ typedef struct PicusFormatData {
 
 /// Additional data required by the selected output format.
 typedef union {
-  AssemblyFormatData Assembly;
-  BytecodeFormatData Bytecode;
-  PicusFormatData Picus;
+  AssemblyFormatData assembly;
+  BytecodeFormatData bytecode;
+  PicusFormatData picus;
 } FormatData;
 
 /// Returns the current codegen inner state. The first time this function
@@ -51,6 +51,9 @@ void release_state(CodegenState *);
 
 /// Initializes a struct that is going to be the target of the IR generation.
 void initialize_struct(CodegenState *, StructSpec);
+
+/// Drops the current target.
+void reset_target(CodegenState *);
 
 /// Returns 1 if the given codegen state has an initialized struct. 0 otherwise.
 int has_struct(CodegenState *);

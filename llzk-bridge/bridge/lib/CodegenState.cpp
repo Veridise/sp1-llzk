@@ -43,8 +43,8 @@ void CodegenStateImpl::dump() {
   llvm::dbgs() << "\n";
 
   llvm::dbgs() << "Current op: ";
-  if (currentTarget) {
-    currentTarget.dump();
+  if (_currentTarget) {
+    _currentTarget->dump();
   } else {
     llvm::dbgs() << "<<NULL>>";
   }
@@ -67,10 +67,13 @@ void release_state(CodegenState *state) {
   state->impl = nullptr;
 }
 
-static void reset_target(ModuleOp op, OpBuilder &builder) {
-  mlir::MLIRContext *ctx = builder.getContext();
-  if (op)
-    op.erase();
+void reset_target(CodegenState *state) {
+  ModuleOp op = unwrap(state).currentTarget();
+  OpBuilder &builder = unwrap(state).builder;
+  MLIRContext *ctx = builder.getContext();
+  if (op) {
+    unwrap(state).noTarget();
+  }
   builder = OpBuilder(ctx);
 }
 
@@ -95,14 +98,14 @@ void initialize_struct(CodegenState *state, StructSpec spec) {
   auto &builder = unwrap(state).builder;
   auto unk = builder.getUnknownLoc();
   // 1. Destroy the current module if any
-  reset_target(unwrap(state).currentTarget, builder);
+  reset_target(state);
   // 2. Create the module
-  unwrap(state).currentTarget = builder.create<ModuleOp>(unk);
-  unwrap(state).currentTarget->setAttr(
+  unwrap(state).setTarget(builder.create<ModuleOp>(unk));
+  unwrap(state).currentTarget()->setAttr(
       llzk::LANG_ATTR_NAME,
       builder.getStringAttr(llzk::LLZKDialect::getDialectNamespace()));
   builder.setInsertionPointToStart(
-      &unwrap(state).currentTarget.getBodyRegion().front());
+      &unwrap(state).currentTarget().getBodyRegion().front());
   // 3. Create the support globals
   create_range_global(state, 8, llzk::NAME_8BITRANGE);
   create_range_global(state, 16, llzk::NAME_16BITRANGE);
@@ -111,45 +114,26 @@ void initialize_struct(CodegenState *state, StructSpec spec) {
       unk, builder.getStringAttr(unwrap(spec.name)), builder.getArrayAttr({}));
   builder.setInsertionPointToStart(&newStruct.getBodyRegion().emplaceBlock());
   // 5. Create the output fields
-  Twine o("output");
-  Twine on("output_next");
+  /*Twine o("output");*/
   auto felt = llzk::FeltType::get(&unwrap(state).ctx);
   for (size_t i = 0; i < spec.n_outputs; i++) {
-    builder.create<llzk::FieldDefOp>(unk, builder.getStringAttr(o + Twine(i)),
-                                     felt);
-    // builder.create<llzk::FieldDefOp>(unk, builder.getStringAttr(on +
-    // Twine(i)),
-    //                                  felt);
+    builder.create<llzk::FieldDefOp>(
+        unk, builder.getStringAttr("output" + Twine(i)), felt);
   }
   // 6. Create the constrain function with the required arguments
   auto selfType = newStruct.getType();
-  auto extfelt = llzk::ArrayType::get(felt, {spec.extfelt_degree});
 #define FELT_ARR(n) llzk::ArrayType::get(felt, {static_cast<long long>(n)})
-#define EXTFELT_ARR(n)                                                         \
-  llzk::ArrayType::get(felt, {static_cast<long long>(n), spec.extfelt_degree})
   TypeRange funcInputs({
       /*SelfArg*/
       selfType,
       /*Inputs*/
       FELT_ARR(spec.n_inputs),
-      /*InputsNext*/
-      /*FELT_ARR(spec.n_inputs),*/
       /*Preprocessed*/
       FELT_ARR(spec.n_preprocessed),
       /*PreprocessedNext*/
       FELT_ARR(spec.n_preprocessed),
-      /*Permutations*/
-      /*EXTFELT_ARR(spec.n_permutations),*/
-      /*PermutationsNext*/
-      /*EXTFELT_ARR(spec.n_permutations),*/
       /*PublicValues*/
       FELT_ARR(spec.n_public_values),
-      /*PermutationChallenges*/
-      /*EXTFELT_ARR(spec.n_permutation_challenges),*/
-      /*GlobalCumulativeSum*/
-      /*FELT_ARR(spec.global_cumulative_sum_total),*/
-      /*LocalCumulativeSum*/
-      /*extfelt,*/
       /*IsFirstRow*/
       felt,
       /*IsLastRow*/
@@ -158,7 +142,6 @@ void initialize_struct(CodegenState *state, StructSpec spec) {
       felt,
   });
 #undef FELT_ARR
-#undef EXTFELT_ARR
   TypeRange funcOutputs;
 
   auto funcType =
@@ -169,14 +152,12 @@ void initialize_struct(CodegenState *state, StructSpec spec) {
   auto &block = func.getRegion().emplaceBlock();
   mlir::SmallVector<Location> locs(funcType.getInputs().size(), unk);
   block.addArguments(funcType.getInputs(), locs);
-  // 7. Create an OpBuilder that points to the beginning of the constrain
-  // function.
   builder.setInsertionPointToStart(&func.getRegion().front());
 }
 
 /// Returns 1 if the given codegen state has an initialized struct. 0 otherwise.
 int has_struct(CodegenState *state) {
-  return unwrap(state).currentTarget != nullptr;
+  return unwrap(state).currentTarget() != nullptr;
 }
 
 template <typename T>
@@ -203,31 +184,19 @@ int commit_struct(CodegenState *state, unsigned char **out, size_t *size,
   *size = -1;
   if (!out)
     return 3;
-  int res = 0;
   switch (format) {
   case OF_Assembly:
-    res = dump_assembly(unwrap(state).currentTarget, out, size);
-    if (res != 0)
-      return res;
-    reset_target(unwrap(state).currentTarget, unwrap(state).builder);
-    break;
+    return dump_assembly(unwrap(state).currentTarget(), out, size);
   case OF_Picus: {
-    auto prime = llvm::APInt(sizeof(data.Picus.prime) << 3, data.Picus.prime);
+    auto prime = llvm::APInt(sizeof(data.picus.prime) << 3, data.picus.prime);
     auto picusCircuit =
-        llzk::translateModuleToPicus(unwrap(state).currentTarget, prime);
-    res = dump_assembly(picusCircuit, out, size);
-
-    if (res != 0)
-      return res;
-    reset_target(unwrap(state).currentTarget, unwrap(state).builder);
-    break;
+        llzk::translateModuleToPicus(unwrap(state).currentTarget(), prime);
+    return dump_assembly(picusCircuit, out, size);
   }
   case OF_Bytecode:
     llvm::errs() << "Bytecode output is not supported yet\n";
-    res = 1;
-    break;
+    return 1;
   }
-  return res;
 }
 
 /// Releases the memory used to store the IR output.

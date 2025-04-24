@@ -1,10 +1,11 @@
-use std::ops::{Add, Mul, Sub};
-
-use super::{
+use crate::{
+    codegen::Codegen,
+    field::ExtFelt,
+    field::Felt,
     value::{ExtFeltValue, FeltValue, Value},
-    Codegen, ExtFelt, Felt, Symbol,
 };
-use std::sync::{Arc, Mutex};
+use llzk_bridge::Symbol;
+use std::ops::{Add, Mul, Sub};
 
 #[derive(Clone, Copy)]
 pub enum FeltVar {
@@ -14,20 +15,20 @@ pub enum FeltVar {
     ArrayArg { arg: Value, idx: usize },
     /// Scalar argument used to encode a circuit input
     Arg { arg: FeltValue },
-    /// Mark a circuit variable as ignored to avoid generating LLZK IR for it.
+    /// Marks a circuit variable as ignored to avoid generating LLZK IR for it.
     Ignore,
 }
 
 impl From<FeltVar> for FeltValue {
     fn from(val: FeltVar) -> Self {
-        let codegen = Codegen::instance();
+        let codegen = Codegen::instance().unwrap();
         match val {
             FeltVar::Field { name } => {
-                codegen.read_self_field(name, codegen.get_felt_type()).into()
+                codegen.read_self_field(name, codegen.get_felt_type()).try_into().unwrap()
             }
             FeltVar::ArrayArg { arg, idx } => {
-                let index = codegen.const_index(idx);
-                codegen.read_array(arg, index).into()
+                let index = codegen.const_index(idx).unwrap();
+                codegen.read_array(arg, index).try_into().unwrap()
             }
             FeltVar::Arg { arg } => arg,
             FeltVar::Ignore => unreachable!(),
@@ -116,105 +117,83 @@ impl Mul<FeltValue> for FeltVar {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct ExtFeltVar {}
-/// Array input of extended field elements.
-//ArrayArg { arg: Value, idx: usize },
-/// Scalar input of extended field element type.
-//Arg { arg: ExtFeltValue },
-//}
 
 impl From<ExtFeltVar> for ExtFeltValue {
-    fn from(value: ExtFeltVar) -> Self {
-        Self {}
-        //let codegen = Codegen::instance();
-        //match value {
-        //    ExtFeltVar::ArrayArg { arg, idx } => {
-        //        let index = codegen.const_index(idx);
-        //        codegen.read_array(arg, index).into()
-        //    }
-        //    ExtFeltVar::Arg { arg } => arg,
-        //}
+    fn from(_value: ExtFeltVar) -> Self {
+        Default::default()
     }
 }
 
 impl Add<ExtFelt> for ExtFeltVar {
     type Output = ExtFeltValue;
 
-    fn add(self, rhs: ExtFelt) -> Self::Output {
-        let lhs: ExtFeltValue = self.into();
-        lhs + rhs
+    fn add(self, _rhs: ExtFelt) -> Self::Output {
+        Default::default()
     }
 }
 
 impl Add<ExtFeltVar> for ExtFeltVar {
     type Output = ExtFeltValue;
 
-    fn add(self, rhs: ExtFeltVar) -> Self::Output {
-        let lhs: ExtFeltValue = self.into();
-        lhs + rhs
+    fn add(self, _rhs: ExtFeltVar) -> Self::Output {
+        Default::default()
     }
 }
 
 impl Add<ExtFeltValue> for ExtFeltVar {
     type Output = ExtFeltValue;
 
-    fn add(self, rhs: ExtFeltValue) -> Self::Output {
-        let lhs: ExtFeltValue = self.into();
-        lhs + rhs
+    fn add(self, _rhs: ExtFeltValue) -> Self::Output {
+        Default::default()
     }
 }
 
 impl Sub<ExtFelt> for ExtFeltVar {
     type Output = ExtFeltValue;
 
-    fn sub(self, rhs: ExtFelt) -> Self::Output {
-        let lhs: ExtFeltValue = self.into();
-        lhs - rhs
+    fn sub(self, _rhs: ExtFelt) -> Self::Output {
+        Default::default()
     }
 }
 
 impl Sub<ExtFeltVar> for ExtFeltVar {
     type Output = ExtFeltValue;
 
-    fn sub(self, rhs: ExtFeltVar) -> Self::Output {
-        let lhs: ExtFeltValue = self.into();
-        lhs - rhs
+    fn sub(self, _rhs: ExtFeltVar) -> Self::Output {
+        Default::default()
     }
 }
 
 impl Sub<ExtFeltValue> for ExtFeltVar {
     type Output = ExtFeltValue;
 
-    fn sub(self, rhs: ExtFeltValue) -> Self::Output {
-        let lhs: ExtFeltValue = self.into();
-        lhs - rhs
+    fn sub(self, _rhs: ExtFeltValue) -> Self::Output {
+        Default::default()
     }
 }
 
 impl Mul<ExtFelt> for ExtFeltVar {
     type Output = ExtFeltValue;
 
-    fn mul(self, rhs: ExtFelt) -> Self::Output {
-        let lhs: ExtFeltValue = self.into();
-        lhs * rhs
+    fn mul(self, _rhs: ExtFelt) -> Self::Output {
+        Default::default()
     }
 }
 
 impl Mul<ExtFeltVar> for ExtFeltVar {
     type Output = ExtFeltValue;
 
-    fn mul(self, rhs: ExtFeltVar) -> Self::Output {
-        let lhs: ExtFeltValue = self.into();
-        lhs * rhs
+    fn mul(self, _rhs: ExtFeltVar) -> Self::Output {
+        Default::default()
     }
 }
 
 impl Mul<ExtFeltValue> for ExtFeltVar {
     type Output = ExtFeltValue;
 
-    fn mul(self, rhs: ExtFeltValue) -> Self::Output {
-        let lhs: ExtFeltValue = self.into();
-        lhs * rhs
+    fn mul(self, _rhs: ExtFeltValue) -> Self::Output {
+        Default::default()
     }
 }

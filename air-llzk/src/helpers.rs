@@ -1,8 +1,8 @@
 use sp1_stark::AirOpenedValues;
 
-use super::{
-    vars::{ExtFeltVar, FeltVar},
-    Args, Codegen,
+use crate::{
+    codegen::{Args, Codegen},
+    vars::FeltVar,
 };
 
 #[inline]
@@ -14,7 +14,7 @@ pub fn main_vars<'a>(
 ) -> Box<dyn FnMut(usize) -> FeltVar + 'a> {
     Box::new(move |idx| {
         if idx < n_inputs {
-            FeltVar::ArrayArg { arg: codegen.get_func_arg(arg.clone()), idx }
+            FeltVar::ArrayArg { arg: codegen.get_func_arg(arg.clone()).unwrap(), idx }
         } else {
             FeltVar::Field {
                 name: codegen.str_to_symbol(format!("{}{}", prefix, idx - n_inputs).as_str()),
@@ -25,26 +25,7 @@ pub fn main_vars<'a>(
 
 #[inline]
 pub fn felt_arg<'a>(codegen: &'a Codegen, arg: Args) -> Box<dyn FnMut(usize) -> FeltVar + 'a> {
-    Box::new(move |idx| FeltVar::ArrayArg { arg: codegen.get_func_arg(arg.clone()), idx })
-}
-
-#[inline]
-pub fn felt_arg_offset<'a, const OFFSET: usize>(
-    codegen: &'a Codegen,
-    arg: Args,
-) -> Box<dyn FnMut(usize) -> FeltVar + 'a> {
-    Box::new(move |idx| FeltVar::ArrayArg {
-        arg: codegen.get_func_arg(arg.clone()),
-        idx: idx + OFFSET,
-    })
-}
-
-#[inline]
-pub fn extfelt_arg<'a>(
-    codegen: &'a Codegen,
-    arg: Args,
-) -> Box<dyn FnMut(usize) -> ExtFeltVar + 'a> {
-    Box::new(move |idx| ExtFeltVar {})
+    Box::new(move |idx| FeltVar::ArrayArg { arg: codegen.get_func_arg(arg.clone()).unwrap(), idx })
 }
 
 #[inline]
@@ -69,14 +50,4 @@ pub fn air_felt_values_from_args<'a>(
     codegen: &'a Codegen,
 ) -> AirOpenedValues<FeltVar> {
     air_values(count, felt_arg(codegen, local), felt_arg(codegen, next))
-}
-
-#[inline]
-pub fn air_extfelt_values_from_args<'a>(
-    count: usize,
-    local: Args,
-    next: Args,
-    codegen: &'a Codegen,
-) -> AirOpenedValues<ExtFeltVar> {
-    air_values(count, extfelt_arg(codegen, local), extfelt_arg(codegen, next))
 }

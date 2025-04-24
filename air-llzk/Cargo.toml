@@ -1,5 +1,5 @@
 [package]
-name = "air"
+name = "air-llzk"
 version = "0.1.0"
 edition = "2021"
 
@@ -13,5 +13,10 @@ sp1-derive = { workspace = true }
 sp1-core-executor = { workspace = true }
 p3-baby-bear = { workspace = true }
 p3-field = { workspace = true }
+p3-uni-stark = { workspace = true }
 tracing = "0.1.40"
 llzk-bridge = { path = "../llzk-bridge" }
+
+[dev-dependencies]
+log = "0.4.27"
+env_logger = "0.11.8"
