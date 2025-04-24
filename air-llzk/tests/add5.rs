@@ -5,10 +5,10 @@ use air_llzk::OutputFormats;
 
 #[test]
 pub fn test_mlir() {
-    common::test_chip::<chips::add5::Add5Chip>(OutputFormats::Assembly);
+    common::test_chip::<chips::add5::Chip>(OutputFormats::Assembly);
 }
 
 #[test]
 pub fn test_picus() {
-    common::test_chip::<chips::add5::Add5Chip>(OutputFormats::Picus);
+    common::test_chip::<chips::add5::Chip>(OutputFormats::Picus);
 }

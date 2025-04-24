@@ -5,34 +5,51 @@ use p3_matrix::dense::RowMajorMatrix;
 use p3_matrix::Matrix;
 use sp1_core_executor::ExecutionRecord;
 use sp1_core_executor::Program;
-use sp1_core_machine::operations::Add5Operation;
+use sp1_core_machine::operations::Add5Operation as Operation;
 use sp1_derive::AlignedBorrow;
 use sp1_stark::air::MachineAir;
 use sp1_stark::{air::SP1AirBuilder, Word};
 use std::borrow::Borrow;
 
+#[derive(Default, Clone, Copy)]
+#[repr(C)]
+struct Ins<T> {
+    words: [Word<T>; 5],
+    is_real: T,
+}
+
 #[derive(AlignedBorrow, Default, Clone, Copy)]
 #[repr(C)]
-struct Add5Cols<T> {
-    a: Word<T>,
-    b: Word<T>,
-    c: Word<T>,
-    d: Word<T>,
-    e: Word<T>,
-    is_real: T,
-    op: Add5Operation<T>,
+struct Cols<T> {
+    ins: Ins<T>,
+    op: Operation<T>,
 }
 
 #[derive(Default)]
-pub struct Add5Chip;
+pub struct Chip;
 
-impl<F: PrimeField32> MachineAir<F> for Add5Chip {
+impl<AB> Air<AB> for Chip
+where
+    AB: SP1AirBuilder,
+{
+    fn eval(&self, builder: &mut AB) {
+        let main = builder.main();
+        let local = main.row_slice(0);
+        let local: &Cols<AB::Var> = (*local).borrow();
+        // constraining `is_real`` to one because it is defined as a variable and generating a constant
+        // var is not super easy
+        builder.assert_one(local.ins.is_real);
+        Operation::<AB::F>::eval(builder, &local.ins.words, local.ins.is_real, local.op);
+    }
+}
+
+impl<F: PrimeField32> MachineAir<F> for Chip {
     type Record = ExecutionRecord;
 
     type Program = Program;
 
     fn name(&self) -> String {
-        "Add5".to_string()
+        std::path::Path::new(file!()).file_stem().unwrap().to_str().unwrap().to_string()
     }
 
     fn num_rows(&self, _input: &Self::Record) -> Option<usize> {
@@ -56,35 +73,14 @@ impl<F: PrimeField32> MachineAir<F> for Add5Chip {
     }
 }
 
-impl ChipInputs for Add5Chip {
+impl ChipInputs for Chip {
     fn inputs() -> usize {
-        size_of::<Add5Cols<u8>>() - size_of::<Add5Operation<u8>>()
+        size_of::<Ins<u8>>()
     }
 }
 
-impl<F> BaseAir<F> for Add5Chip {
+impl<F> BaseAir<F> for Chip {
     fn width(&self) -> usize {
-        size_of::<Add5Cols<u8>>()
-    }
-}
-
-impl<AB> Air<AB> for Add5Chip
-where
-    AB: SP1AirBuilder,
-{
-    fn eval(&self, builder: &mut AB) {
-        let main = builder.main();
-        let local = main.row_slice(0);
-        let local: &Add5Cols<AB::Var> = (*local).borrow();
-        let words: [Word<AB::Var>; 5] = [local.a, local.b, local.c, local.d, local.e];
-        // constraining `is_real`` to one because it is defined as a variable and generating a constant
-        // var is not super easy
-        builder.assert_one(local.is_real);
-        Add5Operation::<AB::F>::eval(
-            builder,
-            &words,
-            local.is_real,
-            local.op,
-        );
+        size_of::<Cols<u8>>()
     }
 }

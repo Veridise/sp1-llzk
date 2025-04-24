@@ -2,7 +2,6 @@ use air_llzk::{air::CodegenBuilder, codegen_llzk_eval, field::Felt, ChipInputs, 
 use log::{info, warn};
 use p3_air::Air;
 use p3_uni_stark::SymbolicAirBuilder;
-use sp1_core_machine::utils::setup_logger;
 use sp1_stark::air::MachineAir;
 use sp1_stark::{Chip, InteractionBuilder};
 use std::{env, fs, path::PathBuf};

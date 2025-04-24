@@ -5,7 +5,7 @@ use p3_matrix::dense::RowMajorMatrix;
 use p3_matrix::Matrix;
 use sp1_core_executor::ExecutionRecord;
 use sp1_core_executor::Program;
-use sp1_core_machine::operations::AddOperation as Operation;
+use sp1_core_machine::operations::IsZeroWordOperation as Operation;
 use sp1_derive::AlignedBorrow;
 use sp1_stark::air::MachineAir;
 use sp1_stark::{air::SP1AirBuilder, Word};
@@ -14,8 +14,7 @@ use std::borrow::Borrow;
 #[derive(Default, Clone, Copy)]
 #[repr(C)]
 struct Ins<T> {
-    a: Word<T>,
-    b: Word<T>,
+    value: Word<T>,
 }
 
 #[derive(AlignedBorrow, Default, Clone, Copy)]
@@ -36,7 +35,12 @@ where
         let main = builder.main();
         let local = main.row_slice(0);
         let local: &Cols<AB::Var> = (*local).borrow();
-        Operation::<AB::F>::eval(builder, local.ins.a, local.ins.b, local.op, AB::Expr::one());
+        Operation::<AB::F>::eval(
+            builder,
+            local.ins.value.map(|part| part.into()),
+            local.op,
+            AB::Expr::one(),
+        );
     }
 }
 
