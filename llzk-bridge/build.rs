@@ -18,8 +18,12 @@ const BRIDGE_HEADER: &str = "include/bridge.h";
 const LLVM_MAJOR_VERSION: usize = 18;
 
 fn link_llzk() -> Result<(), Box<dyn Error>> {
-    let path = env::var("LLZK_LIB_PATH")?;
-    println!("cargo:rustc-link-search={}", path);
+    //let path = env::var("LLZK_LIB_PATH")?;
+    let path = Config::new("vendor/llzk-46c8a31b")
+        //.define("LLVM_DIR", llvm_config("--prefix").unwrap())
+        .define("LLZK_BUILD_DEVTOOLS", "ON")
+        .build();
+    println!("cargo:rustc-link-search={}/lib", path.display());
 
     println!("cargo:rustc-link-lib=LLZKDialect");
     println!("cargo:rustc-link-lib=LLZKDialectRegistration");

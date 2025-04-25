@@ -3,9 +3,10 @@
   stdenv, lib, rustPlatform,
 
   # dependencies
-  mlir, llzk,
+  mlir, #llzk,
   cmake, cargo, llvmPackages_18,
-  ncurses, libxml2, clang
+  ncurses, libxml2, clang, 
+  z3
 }:
 let 
   llvm = llvmPackages_18;
@@ -22,22 +23,24 @@ rustPlatform.buildRustPackage rec {
     cmake 
     cargo 
     clang 
-    llzk 
+    #llzk 
     mlir.dev 
     libxml2 
   ];
   buildInputs = [ 
-    llzk 
+    #llzk 
     mlir.dev 
     ncurses 
     libxml2 
+    z3.lib
   ];
 
   #LIBCLANG_PATH = "${pkgs.llvmPackages.libclang}/lib";
   MLIR_DIR = "${mlir.lib}";
-  LLZK_LIB_PATH = "${llzk}/lib";
+  #LLZK_LIB_PATH = "${llzk}/lib";
 
   preBuild = ''
+    export LD_LIBRARY_PATH=${z3.lib}/lib:$LD_LIBRARY_PATH
     # From: https://github.com/NixOS/nixpkgs/blob/1fab95f5190d087e66a3502481e34e15d62090aa/pkgs/applications/networking/browsers/firefox/common.nix#L247-L253
     # Set C flags for Rust's bindgen program. Unlike ordinary C
     # compilation, bindgen does not invoke $CC directly. Instead it

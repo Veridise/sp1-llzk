@@ -16,35 +16,6 @@
         "type": "github"
       }
     },
-    "llzk": {
-      "inputs": {
-        "flake-utils": [
-          "llzk",
-          "llzk-pkgs",
-          "flake-utils"
-        ],
-        "llzk-pkgs": [
-          "llzk-pkgs"
-        ],
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1745441551,
-        "narHash": "sha256-oW6bbbEV58lwiptBaa3QQK6UU2YwABTX7NCfHCNEwF4=",
-        "ref": "dani/LLZK-253-LLZK-to-Picus-translation",
-        "rev": "46c8a31b70d1c14fba64b28890aac61aefb576fa",
-        "revCount": 183,
-        "type": "git",
-        "url": "ssh://git@github.com/Veridise/llzk-lib.git"
-      },
-      "original": {
-        "ref": "dani/LLZK-253-LLZK-to-Picus-translation",
-        "type": "git",
-        "url": "ssh://git@github.com/Veridise/llzk-lib.git"
-      }
-    },
     "llzk-pkgs": {
       "inputs": {
         "flake-utils": "flake-utils",
@@ -86,7 +57,6 @@
           "llzk-pkgs",
           "flake-utils"
         ],
-        "llzk": "llzk",
         "llzk-pkgs": "llzk-pkgs",
         "nixpkgs": [
           "llzk-pkgs",
