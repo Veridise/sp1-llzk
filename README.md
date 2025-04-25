@@ -66,3 +66,13 @@ See the `air-llzk/examples` directory for more examples of how to use the crate.
 |  `Bytecode` | Outputs MLIR IR in bytecode form. This is intended for feeding IR to other LLZK tools.  |
 | `Picus` | Outputs a Picus program that can be used for verifying the circuit. |
 
+
+## Workspace crates 
+
+Brief list of the crates in this workspace.
+
+| Name | Description |
+|---|---|
+| `air-llzk` | Public API for generating LLZK code from AIR chips. It can also generate Picus programs via LLZK. |
+| `air-picus` | Public API for generating Picus programs from AIR chips. |
+| `llzk-bridge` | Support module that implements an FFI layer for working with LLZK's C++ classes. |
