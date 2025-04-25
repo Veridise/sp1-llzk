@@ -1,6 +1,10 @@
 # SP1-LLZK
 
-This repository contains Rust modules for lowering SP1 circuits into LLZK and Picus. There are two extractors present: the `air->llzk` extractor is under the directory `air-llzk/` and the direct `air->picus` extractor is under `air-picus`. The reason we included two extractors is that the `air->llzk` requires some functionality to be built on LLZK to support Byte lookups. 
+This repository contains Rust modules for lowering SP1 circuits into LLZK and Picus. It includes two extractors:
+- The `air -> llzk` extractor, located in the `air-llzk/` directory
+- The direct `air -> picus` extractor, located in `air-picus/`
+
+The `air -> picus` path is included as a temporary solution while LLZK undergoes updates to better support lookup constraints. We expect LLZK to have full support by early May, at which point the direct `air -> picus` extractor will no longer be necessary.
 
 ## Building
 
