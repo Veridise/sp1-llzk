@@ -1,0 +1,13 @@
+pub mod add;
+pub mod add4;
+pub mod add5;
+pub mod and;
+pub mod xor;
+pub mod or;
+pub mod is_equal_word;
+pub mod is_zero;
+pub mod is_zero_word;
+pub mod globalinteraction;
+pub mod fixed_rotate_right;
+pub mod fixed_shift_right;
+pub mod lt;
