@@ -1,6 +1,6 @@
 # SP1-LLZK
 
-Rust modules for lowering Air circuits into LLZK.
+This repository contains Rust modules for lowering SP1 circuits into LLZK and Picus. There are two extractors present: the `air->llzk` extractor is under the directory `air-llzk/` and the direct `air->picus` extractor is under `air-picus`. The reason we included two extractors is that the `air->llzk` requires some functionality to be built on LLZK to support Byte lookups. 
 
 ## Building
 
@@ -52,7 +52,7 @@ fn main() {
 }
 ```
 
-See the `examples` directory for more examples of how to use the crate. To run a particular example do `cargo run --example <example_name>`.
+See the `air-llzk/examples` directory for more examples of how to use the crate. To run a particular example do `cargo run --example <example_name>`.
 
 ### Supported output formats 
 
