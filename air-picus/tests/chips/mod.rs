@@ -10,3 +10,4 @@ pub mod is_zero_word;
 pub mod globalinteraction;
 pub mod fixed_rotate_right;
 pub mod fixed_shift_right;
+pub mod lt;

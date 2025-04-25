@@ -248,6 +248,8 @@ impl MessageBuilder<AirInteraction<PicusExpr>> for CodegenBuilder<'_> {
         _message: AirInteraction<PicusExpr>,
         _scope: sp1_stark::air::InteractionScope,
     ) {
-        unreachable!()
+        // TODO: Need to handle this because we have receive instructions for each operation. Need to ask John
+        // about the best way to deal with this. For now we ignore receive instructions. If it is provably deterministic
+        // without handling this then we are good.
     }
 }
