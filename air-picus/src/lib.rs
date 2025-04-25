@@ -25,7 +25,7 @@ lazy_static! {
     pub static ref PICUS_EXTRACTOR: Mutex<PicusExtractor> = Mutex::new(PicusExtractor::new());
 }
 
-/// Generate code from a chip using LLZK.
+/// Generate Picus code from a chip.
 pub fn codegen_picus_eval_with_inputs<A>(
     chip: &Chip<Felt, A>,
     n_inputs: usize,
@@ -44,7 +44,7 @@ where
     res
 }
 
-/// Generate code from a chip using LLZK.
+/// Generate Picus code from a chip.
 pub fn codegen_picus_eval<A>(
     chip: &Chip<Felt, A>,
 ) -> String
