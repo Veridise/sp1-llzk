@@ -6,7 +6,9 @@
   mlir, #llzk,
   cmake, cargo, llvmPackages_18,
   ncurses, libxml2, clang, 
-  z3
+  z3,
+
+  gtest, python3, lit, cvc5
 }:
 let 
   llvm = llvmPackages_18;
@@ -26,6 +28,10 @@ rustPlatform.buildRustPackage rec {
     #llzk 
     mlir.dev 
     libxml2 
+    python3 
+    lit 
+    z3 
+    cvc5
   ];
   buildInputs = [ 
     #llzk 
@@ -33,6 +39,7 @@ rustPlatform.buildRustPackage rec {
     ncurses 
     libxml2 
     z3.lib
+    gtest 
   ];
 
   #LIBCLANG_PATH = "${pkgs.llvmPackages.libclang}/lib";
